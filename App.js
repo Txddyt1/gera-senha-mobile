@@ -1,16 +1,26 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, SafeAreaView, StyleSheet, Text } from 'react-native';
+import { AuthProvider, useAuth } from './src/context/AuthContext';
 import HomeScream from './src/screams/homeScream';
 import HistoryScream from './src/screams/historyScream';
 import SigninScream from './src/screams/signinScream';
 import SignupScream from './src/screams/signupScream';
 import {
-  clearSavedPasswords,
   loadSavedPasswords,
   saveSavedPasswords,
 } from './src/services/passwordStorage';
 
 export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  );
+}
+
+function AppContent() {
   const [screen, setScreen] = useState('signin');
+  const { authSession, isAuthenticated, isBootstrapping } = useAuth();
   const [historyData, setHistoryData] = useState([]);
   const historyDataRef = useRef([]);
 
@@ -22,10 +32,36 @@ export default function App() {
   });
 
   useEffect(() => {
+    setScreen(currentScreen => {
+      if (isAuthenticated && (currentScreen === 'signin' || currentScreen === 'signup')) {
+        return 'home';
+      }
+
+      if (!isAuthenticated && (currentScreen === 'home' || currentScreen === 'history')) {
+        return 'signin';
+      }
+
+      return currentScreen;
+    });
+  }, [isAuthenticated]);
+
+  const historyOwnerKey = authSession?.user?.id ? String(authSession.user.id) : null;
+
+  useEffect(() => {
     let isMounted = true;
 
     async function hydrateHistory() {
-      const savedHistory = await loadSavedPasswords();
+      if (!historyOwnerKey) {
+        historyDataRef.current = [];
+
+        if (isMounted) {
+          setHistoryData([]);
+        }
+
+        return;
+      }
+
+      const savedHistory = await loadSavedPasswords(historyOwnerKey);
       const normalizedHistory = savedHistory.map(normalizeHistoryItem);
 
       if (!isMounted) {
@@ -36,7 +72,7 @@ export default function App() {
       setHistoryData(normalizedHistory);
 
       if (JSON.stringify(savedHistory) !== JSON.stringify(normalizedHistory)) {
-        await saveSavedPasswords(normalizedHistory);
+        await saveSavedPasswords(historyOwnerKey, normalizedHistory);
       }
     }
 
@@ -45,10 +81,10 @@ export default function App() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [historyOwnerKey]);
 
   const addToHistory = async ({ appName, value }) => {
-    if (!appName?.trim() || !value) {
+    if (!historyOwnerKey || !appName?.trim() || !value) {
       return false;
     }
 
@@ -66,33 +102,45 @@ export default function App() {
     historyDataRef.current = nextHistory;
     setHistoryData(nextHistory);
 
-    const persisted = await saveSavedPasswords(nextHistory);
+    const persisted = await saveSavedPasswords(historyOwnerKey, nextHistory);
     return persisted || nextHistory.some(item => item.id === newItem.id);
   };
 
   const handleDeleteHistoryItem = async (id) => {
+    if (!historyOwnerKey) {
+      return false;
+    }
+
     const nextHistory = historyDataRef.current.filter(item => item.id !== id);
     historyDataRef.current = nextHistory;
     setHistoryData(nextHistory);
 
-    const persisted = await saveSavedPasswords(nextHistory);
+    const persisted = await saveSavedPasswords(historyOwnerKey, nextHistory);
     return persisted || !nextHistory.some(item => item.id === id);
   };
 
+  if (isBootstrapping) {
+    return (
+      <SafeAreaView style={styles.loadingContainer}>
+        <ActivityIndicator color="#0E3D7A" size="large" />
+        <Text style={styles.loadingText}>Carregando sessao...</Text>
+      </SafeAreaView>
+    );
+  }
+
   const handleClearHistory = async () => {
+    if (!historyOwnerKey) {
+      return;
+    }
+
     historyDataRef.current = [];
     setHistoryData([]);
-    await clearSavedPasswords();
-  };
-
-  const handleSignOut = () => {
-    setScreen('signin');
+    await saveSavedPasswords(historyOwnerKey, []);
   };
 
   if (screen === 'signin') {
     return (
       <SigninScream
-        onEnter={() => setScreen('home')}
         onNavigateToSignup={() => setScreen('signup')}
       />
     );
@@ -102,7 +150,6 @@ export default function App() {
     return (
       <SignupScream
         onBack={() => setScreen('signin')}
-        onRegister={() => setScreen('home')}
       />
     );
   }
@@ -111,7 +158,6 @@ export default function App() {
     <HomeScream
       onNavigateToHistory={() => setScreen('history')}
       addToHistory={addToHistory}
-      onSignOut={handleSignOut}
     />
   ) : (
     <HistoryScream
@@ -122,3 +168,18 @@ export default function App() {
     />
   );
 }
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 24,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#0E3D7A',
+  },
+});

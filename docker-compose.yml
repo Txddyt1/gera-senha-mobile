@@ -1,0 +1,64 @@
+services:
+  db:
+    image: mysql:8.4
+    container_name: demo-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: demo_auth
+      MYSQL_USER: demo_user
+      MYSQL_PASSWORD: demo_pass
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-udemo_user",
+          "-pdemo_pass"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./server/database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+  api:
+    build:
+      context: ./server
+    container_name: demo-api
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PORT: 3001
+      MYSQL_HOST: db
+      MYSQL_PORT: 3306
+      MYSQL_USER: demo_user
+      MYSQL_PASSWORD: demo_pass
+      MYSQL_DATABASE: demo_auth
+      JWT_SECRET: troque-esta-chave-em-producao
+      JWT_EXPIRES_IN: 1h
+      CORS_ORIGIN: http://localhost:8080
+    ports:
+      - "3001:3001"
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+      args:
+        EXPO_PUBLIC_API_BASE_URL: http://localhost:3001
+    container_name: demo-web
+    depends_on:
+      - api
+    ports:
+      - "8080:80"
+
+volumes:
+  mysql_data:

@@ -14,8 +14,11 @@ import {
 import generatePassword from '../utils/generatePassword';
 import { copyToClipboard } from '../services/clipboardService';
 import Toast from '../components/Toast';
+import { useAuth } from '../context/AuthContext';
+import { androidTopInset } from '../utils/screenInsets';
 
-export default function HomeScream({ onNavigateToHistory, addToHistory, onSignOut }) {
+export default function HomeScream({ onNavigateToHistory, addToHistory }) {
+  const { signOut } = useAuth();
   const [password, setPassword] = useState('');
   const [applicationName, setApplicationName] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -56,10 +59,7 @@ export default function HomeScream({ onNavigateToHistory, addToHistory, onSignOu
   const handleSignOut = () => {
     handleCloseModal();
     setPassword('');
-
-    if (typeof onSignOut === 'function') {
-      onSignOut();
-    }
+    signOut();
   };
 
   const handleSavePassword = async () => {
@@ -214,6 +214,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+    paddingTop: androidTopInset,
   },
   header: {
     height: 56,

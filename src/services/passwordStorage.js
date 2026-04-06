@@ -1,10 +1,24 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const PASSWORD_HISTORY_KEY = '@demo/password-history';
+const PASSWORD_HISTORY_KEY_PREFIX = '@demo/password-history';
 
-export async function loadSavedPasswords() {
+function getPasswordHistoryKey(accountKey) {
+  if (!accountKey) {
+    return null;
+  }
+
+  return `${PASSWORD_HISTORY_KEY_PREFIX}/${accountKey}`;
+}
+
+export async function loadSavedPasswords(accountKey) {
+  const storageKey = getPasswordHistoryKey(accountKey);
+
+  if (!storageKey) {
+    return [];
+  }
+
   try {
-    const storedValue = await AsyncStorage.getItem(PASSWORD_HISTORY_KEY);
+    const storedValue = await AsyncStorage.getItem(storageKey);
     if (!storedValue) {
       return [];
     }
@@ -16,18 +30,30 @@ export async function loadSavedPasswords() {
   }
 }
 
-export async function saveSavedPasswords(passwords) {
+export async function saveSavedPasswords(accountKey, passwords) {
+  const storageKey = getPasswordHistoryKey(accountKey);
+
+  if (!storageKey) {
+    return false;
+  }
+
   try {
-    await AsyncStorage.setItem(PASSWORD_HISTORY_KEY, JSON.stringify(passwords));
+    await AsyncStorage.setItem(storageKey, JSON.stringify(passwords));
     return true;
   } catch (error) {
     return false;
   }
 }
 
-export async function clearSavedPasswords() {
+export async function clearSavedPasswords(accountKey) {
+  const storageKey = getPasswordHistoryKey(accountKey);
+
+  if (!storageKey) {
+    return false;
+  }
+
   try {
-    await AsyncStorage.removeItem(PASSWORD_HISTORY_KEY);
+    await AsyncStorage.removeItem(storageKey);
     return true;
   } catch (error) {
     return false;

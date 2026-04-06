@@ -10,12 +10,17 @@ import {
   View,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { useAuth } from '../context/AuthContext';
+import { androidTopInset } from '../utils/screenInsets';
 
-export default function SignupScream({ onBack, onRegister }) {
+export default function SignupScream({ onBack }) {
+  const { signUp } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const passwordsMatch = password === confirmPassword;
   const isSubmitDisabled =
@@ -23,7 +28,30 @@ export default function SignupScream({ onBack, onRegister }) {
     !email.trim() ||
     !password.trim() ||
     !confirmPassword.trim() ||
-    !passwordsMatch;
+    !passwordsMatch ||
+    isSubmitting;
+
+  const handleRegister = async () => {
+    if (isSubmitDisabled) {
+      return;
+    }
+
+    setErrorMessage('');
+    setIsSubmitting(true);
+
+    const result = await signUp({
+      name,
+      email,
+      password,
+      confirmPassword,
+    });
+
+    if (!result?.ok) {
+      setErrorMessage(result?.message || 'Nao foi possivel concluir o cadastro.');
+    }
+
+    setIsSubmitting(false);
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -46,6 +74,7 @@ export default function SignupScream({ onBack, onRegister }) {
           <View style={styles.fieldGroup}>
             <Text style={styles.label}>Nome</Text>
             <TextInput
+              editable={!isSubmitting}
               onChangeText={setName}
               placeholder="Digite seu nome"
               placeholderTextColor="#4F7F98"
@@ -58,6 +87,7 @@ export default function SignupScream({ onBack, onRegister }) {
             <Text style={styles.label}>Email</Text>
             <TextInput
               autoCapitalize="none"
+              editable={!isSubmitting}
               keyboardType="email-address"
               onChangeText={setEmail}
               placeholder="Digite seu email"
@@ -71,6 +101,7 @@ export default function SignupScream({ onBack, onRegister }) {
             <Text style={styles.label}>Senha</Text>
             <TextInput
               autoCapitalize="none"
+              editable={!isSubmitting}
               onChangeText={setPassword}
               placeholder="Crie uma senha"
               placeholderTextColor="#4F7F98"
@@ -84,6 +115,7 @@ export default function SignupScream({ onBack, onRegister }) {
             <Text style={styles.label}>Confirmar Senha</Text>
             <TextInput
               autoCapitalize="none"
+              editable={!isSubmitting}
               onChangeText={setConfirmPassword}
               placeholder="Confirme sua senha"
               placeholderTextColor="#4F7F98"
@@ -97,13 +129,15 @@ export default function SignupScream({ onBack, onRegister }) {
             <Text style={styles.errorText}>As senhas precisam ser iguais.</Text>
           ) : null}
 
+          {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
+
           <Pressable
             disabled={isSubmitDisabled}
-            onPress={() => onRegister && onRegister()}
+            onPress={handleRegister}
             style={[styles.button, isSubmitDisabled && styles.buttonDisabled]}
           >
             <Text style={[styles.buttonText, isSubmitDisabled && styles.buttonTextDisabled]}>
-              REGISTRAR
+              {isSubmitting ? 'REGISTRANDO...' : 'REGISTRAR'}
             </Text>
           </Pressable>
 
@@ -120,6 +154,7 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+    paddingTop: androidTopInset,
   },
   keyboardView: {
     flex: 1,

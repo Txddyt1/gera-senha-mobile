@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import Toast from '../components/Toast';
 import { copyToClipboard } from '../services/clipboardService';
+import { androidTopInset } from '../utils/screenInsets';
 
 export default function HistoryScream({ history = [], onBack, onDeleteItem }) {
   const [visiblePasswords, setVisiblePasswords] = useState({});
@@ -141,6 +142,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+    paddingTop: androidTopInset,
   },
   title: {
     marginBottom: 28,

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -10,12 +10,41 @@ import {
   View,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { useAuth } from '../context/AuthContext';
+import { androidTopInset } from '../utils/screenInsets';
 
-export default function SigninScream({ onEnter, onNavigateToSignup }) {
+export default function SigninScream({ onNavigateToSignup, initialEmail = '' }) {
+  const { signIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const isSubmitDisabled = !email.trim() || !password.trim();
+  useEffect(() => {
+    setEmail(initialEmail);
+  }, [initialEmail]);
+
+  const isSubmitDisabled = !email.trim() || !password.trim() || isSubmitting;
+
+  const handleSubmit = async () => {
+    if (isSubmitDisabled) {
+      return;
+    }
+
+    setErrorMessage('');
+    setIsSubmitting(true);
+
+    const result = await signIn({
+      email,
+      password,
+    });
+
+    if (!result?.ok) {
+      setErrorMessage(result?.message || 'Nao foi possivel realizar o login.');
+    }
+
+    setIsSubmitting(false);
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -35,6 +64,7 @@ export default function SigninScream({ onEnter, onNavigateToSignup }) {
             <Text style={styles.label}>Email</Text>
             <TextInput
               autoCapitalize="none"
+              editable={!isSubmitting}
               keyboardType="email-address"
               onChangeText={setEmail}
               placeholder="Digite seu email"
@@ -48,6 +78,7 @@ export default function SigninScream({ onEnter, onNavigateToSignup }) {
             <Text style={styles.label}>Senha</Text>
             <TextInput
               autoCapitalize="none"
+              editable={!isSubmitting}
               onChangeText={setPassword}
               placeholder="Digite sua senha"
               placeholderTextColor="#4F7F98"
@@ -57,13 +88,15 @@ export default function SigninScream({ onEnter, onNavigateToSignup }) {
             />
           </View>
 
+          {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
+
           <Pressable
             disabled={isSubmitDisabled}
-            onPress={() => onEnter && onEnter()}
+            onPress={handleSubmit}
             style={[styles.button, isSubmitDisabled && styles.buttonDisabled]}
           >
             <Text style={[styles.buttonText, isSubmitDisabled && styles.buttonTextDisabled]}>
-              ENTRAR
+              {isSubmitting ? 'ENTRANDO...' : 'ENTRAR'}
             </Text>
           </Pressable>
 
@@ -83,6 +116,7 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+    paddingTop: androidTopInset,
   },
   keyboardView: {
     flex: 1,
@@ -128,6 +162,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     fontSize: 16,
     color: '#183648',
+  },
+  errorText: {
+    marginTop: 4,
+    marginBottom: 4,
+    textAlign: 'center',
+    color: '#B3261E',
   },
   button: {
     alignSelf: 'center',
