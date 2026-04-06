@@ -1,28 +1,124 @@
 # Demo
 
-Aplicacao Expo com gerador de senhas, historico local por usuario autenticado e API Node.js com MySQL para cadastro, login e logout com JWT.
+Aplicacao full stack desenvolvida com Expo/React Native, Node.js e MySQL. O projeto combina autenticacao basica com JWT, geracao de senhas e historico local por usuario autenticado.
 
-## O que foi implementado
+O app foi pensado para funcionar tanto na web quanto no mobile, com a mesma base de interface e uma API dedicada para cadastro, login e validacao de sessao.
 
-- `POST /signup` com validacao de email unico, regex de email, confirmacao de senha e hash com `bcryptjs`
-- `POST /signin` com validacao de credenciais e retorno de token JWT
-- `GET /signin` como rota publica informativa
-- `GET /signout` como rota autenticada por token JWT
-- Persistencia de sessao no cliente com `localStorage` na web e `AsyncStorage` no mobile
-- Remocao do token ao fazer logout
-- Docker Compose com frontend web, API e MySQL
+## Principais funcionalidades
 
-## Estrutura principal
+- Cadastro de usuarios com validacao de email unico
+- Validacao de email por regex no backend
+- Confirmacao de senha no cadastro
+- Criptografia de senha com `bcryptjs` antes de salvar no banco
+- Login com retorno de token JWT
+- Persistencia de sessao no cliente
+- Logout com remocao da sessao local
+- Geracao de senhas aleatorias no app
+- Historico local de senhas separado por usuario autenticado
+- Execucao da stack com Docker Compose
 
-- `App.js`: fluxo entre login, cadastro, home e historico
+## Como a autenticacao funciona
+
+### Cadastro
+
+Na rota `POST /signup`, a API valida:
+
+- nome obrigatorio
+- email obrigatorio
+- email em formato valido
+- existencia previa do email no banco
+- igualdade entre `password` e `confirmPassword`
+
+Se tudo estiver correto, a senha e criptografada com `bcryptjs` e o usuario e salvo no MySQL.
+
+### Login
+
+Na rota `POST /signin`, a API:
+
+- busca o usuario pelo email
+- compara a senha enviada com o hash salvo no banco
+- gera um token JWT quando as credenciais sao validas
+
+O cliente salva a sessao autenticada com:
+
+- `localStorage` na versao web
+- `AsyncStorage` na versao mobile
+
+### Validacao de sessao
+
+Quando o app inicia, o frontend tenta restaurar a sessao salva e chama a rota `GET /session` para confirmar se o token ainda e valido.
+
+### Logout
+
+O logout chama `GET /signout` com o token JWT e, em seguida, remove a sessao do cliente.
+
+## Stack utilizada
+
+### Frontend
+
+- Expo
+- React Native
+- React Hooks
+- Context API
+- AsyncStorage
+
+### Backend
+
+- Node.js
+- Express
+- MySQL
+- mysql2
+- bcryptjs
+- jsonwebtoken
+
+### Infraestrutura
+
+- Docker
+- Docker Compose
+- Nginx para servir a versao web exportada
+
+## Estrutura principal do projeto
+
+- `App.js`: fluxo principal entre telas
+- `src/context/`: controle global da autenticacao
 - `src/screams/`: telas da aplicacao
-- `src/services/`: API, persistencia da sessao e historico local
-- `server/src/`: API Express com MySQL e JWT
-- `server/database/init.sql`: criacao inicial da tabela `users`
+- `src/services/`: consumo da API e persistencia local
+- `src/utils/`: utilitarios de senha e ajustes de layout
+- `server/src/`: API Express
+- `server/database/init.sql`: estrutura inicial da tabela de usuarios
+- `docker-compose.yml`: orquestracao de banco, API e frontend web
+
+## Como rodar o projeto
+
+### Pre-requisitos
+
+- Node.js instalado
+- npm instalado
+- Docker e Docker Compose, se quiser subir a stack completa com containers
+- Android Studio ou Expo Go, se quiser testar a versao mobile
 
 ## Rodando sem Docker
 
-### Frontend
+### 1. Backend
+
+Na pasta `server`:
+
+```bash
+cd server
+npm install
+copy .env.example .env
+npm run dev
+```
+
+Por padrao, a API sobe em:
+
+```text
+http://localhost:3001
+```
+
+### 2. Frontend
+
+Na raiz do projeto:
 
 ```bash
 npm install
@@ -38,28 +134,41 @@ npm run web
 npm run web:export
 ```
 
-### Backend
+Se quiser apontar o frontend para outra URL da API, crie um arquivo `.env` na raiz com base em `.env.example`:
 
-```bash
-cd server
-npm install
-copy .env.example .env
-npm run dev
+```env
+EXPO_PUBLIC_API_BASE_URL=http://localhost:3001
 ```
 
+### Observacao para Android Emulator
+
+No emulador Android, o app usa `http://10.0.2.2:3001` como fallback para acessar a API local do host.
+
 ## Rodando com Docker
+
+Para subir banco, API e versao web:
 
 ```bash
 docker compose up --build
 ```
 
-Servicos:
+Servicos expostos:
 
 - Frontend web: `http://localhost:8080`
 - API: `http://localhost:3001`
 - MySQL: `localhost:3307`
 
-## Rotas da API
+Credenciais do banco no host:
+
+```text
+host: localhost
+port: 3307
+user: demo_user
+password: demo_pass
+database: demo_auth
+```
+
+## Rotas principais da API
 
 ### Publicas
 
@@ -67,7 +176,18 @@ Servicos:
 - `POST /signup`
 - `POST /signin`
 
-Exemplo de cadastro:
+### Autenticadas
+
+- `GET /session`
+- `GET /signout`
+
+Envie o cabecalho:
+
+```text
+Authorization: Bearer <jwt>
+```
+
+### Exemplo de cadastro
 
 ```json
 {
@@ -78,7 +198,7 @@ Exemplo de cadastro:
 }
 ```
 
-Exemplo de login:
+### Exemplo de login
 
 ```json
 {
@@ -87,12 +207,14 @@ Exemplo de login:
 }
 ```
 
-### Autenticada
+## Detalhes importantes
 
-- `GET /signout`
+- As credenciais de usuarios ficam no MySQL
+- O historico de senhas geradas fica salvo localmente no dispositivo
+- O historico local e separado por usuario autenticado
+- O token JWT e validado no backend antes de liberar rotas protegidas
+- O projeto possui versao web e mobile usando a mesma base de negocio
 
-Envie o cabecalho:
+## Objetivo do projeto
 
-```text
-Authorization: Bearer <jwt>
-```
+Este repositorio demonstra uma implementacao simples e funcional de autenticacao com JWT em uma aplicacao Expo/React Native, integrando frontend, backend, banco relacional e Docker em uma unica entrega.
