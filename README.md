@@ -38,8 +38,6 @@ npm run web
 npm run web:export
 ```
 
-Se precisar apontar o app para outra URL da API, crie um arquivo `.env` na raiz baseado em `.env.example`.
-
 ### Backend
 
 ```bash
@@ -98,10 +96,3 @@ Envie o cabecalho:
 ```text
 Authorization: Bearer <jwt>
 ```
-
-## Observacoes
-
-- O JWT e stateless. A rota `GET /signout` valida o token e o cliente remove a sessao local.
-- O historico de senhas fica separado por usuario autenticado no dispositivo.
-- Para Android Emulator sem Docker, a API usa `http://10.0.2.2:3001` por padrao.
-- Nao consegui extrair o conteudo textual do PDF com as ferramentas locais disponiveis neste ambiente, entao a implementacao foi guiada pelos requisitos que voce descreveu e pela estrutura do app existente.
