@@ -6,9 +6,10 @@ import HistoryScream from './src/screams/historyScream';
 import SigninScream from './src/screams/signinScream';
 import SignupScream from './src/screams/signupScream';
 import {
-  loadSavedPasswords,
-  saveSavedPasswords,
-} from './src/services/passwordStorage';
+  createPassword,
+  deletePassword,
+  listPasswords,
+} from './src/services/passwordService';
 
 export default function App() {
   return (
@@ -20,7 +21,7 @@ export default function App() {
 
 function AppContent() {
   const [screen, setScreen] = useState('signin');
-  const { authSession, isAuthenticated, isBootstrapping } = useAuth();
+  const { isAuthenticated, isBootstrapping, token } = useAuth();
   const [historyData, setHistoryData] = useState([]);
   const historyDataRef = useRef([]);
 
@@ -45,13 +46,11 @@ function AppContent() {
     });
   }, [isAuthenticated]);
 
-  const historyOwnerKey = authSession?.user?.id ? String(authSession.user.id) : null;
-
   useEffect(() => {
     let isMounted = true;
 
     async function hydrateHistory() {
-      if (!historyOwnerKey) {
+      if (!token) {
         historyDataRef.current = [];
 
         if (isMounted) {
@@ -61,18 +60,23 @@ function AppContent() {
         return;
       }
 
-      const savedHistory = await loadSavedPasswords(historyOwnerKey);
-      const normalizedHistory = savedHistory.map(normalizeHistoryItem);
+      try {
+        const response = await listPasswords(token);
+        const normalizedHistory = (response.passwords || []).map(normalizeHistoryItem);
 
-      if (!isMounted) {
-        return;
-      }
+        if (!isMounted) {
+          return;
+        }
 
-      historyDataRef.current = normalizedHistory;
-      setHistoryData(normalizedHistory);
+        historyDataRef.current = normalizedHistory;
+        setHistoryData(normalizedHistory);
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
 
-      if (JSON.stringify(savedHistory) !== JSON.stringify(normalizedHistory)) {
-        await saveSavedPasswords(historyOwnerKey, normalizedHistory);
+        historyDataRef.current = [];
+        setHistoryData([]);
       }
     }
 
@@ -81,42 +85,49 @@ function AppContent() {
     return () => {
       isMounted = false;
     };
-  }, [historyOwnerKey]);
+  }, [token]);
 
   const addToHistory = async ({ appName, value }) => {
-    if (!historyOwnerKey || !appName?.trim() || !value) {
+    if (!token || !appName?.trim() || !value) {
       return false;
     }
 
-    const newItem = {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      appName: appName.trim(),
-      value,
-      createdAt: new Date().toISOString(),
-    };
-    const nextHistory = [
-      newItem,
-      ...historyDataRef.current,
-    ];
+    try {
+      const response = await createPassword(token, {
+        appName,
+        value,
+      });
+      const newItem = normalizeHistoryItem(response.password, 0);
+      const nextHistory = [
+        newItem,
+        ...historyDataRef.current,
+      ];
 
-    historyDataRef.current = nextHistory;
-    setHistoryData(nextHistory);
+      historyDataRef.current = nextHistory;
+      setHistoryData(nextHistory);
 
-    const persisted = await saveSavedPasswords(historyOwnerKey, nextHistory);
-    return persisted || nextHistory.some(item => item.id === newItem.id);
+      return true;
+    } catch (error) {
+      return false;
+    }
   };
 
   const handleDeleteHistoryItem = async (id) => {
-    if (!historyOwnerKey) {
+    if (!token) {
       return false;
     }
 
-    const nextHistory = historyDataRef.current.filter(item => item.id !== id);
-    historyDataRef.current = nextHistory;
-    setHistoryData(nextHistory);
+    try {
+      await deletePassword(token, id);
 
-    const persisted = await saveSavedPasswords(historyOwnerKey, nextHistory);
-    return persisted || !nextHistory.some(item => item.id === id);
+      const nextHistory = historyDataRef.current.filter(item => item.id !== id);
+      historyDataRef.current = nextHistory;
+      setHistoryData(nextHistory);
+
+      return true;
+    } catch (error) {
+      return false;
+    }
   };
 
   if (isBootstrapping) {
@@ -127,16 +138,6 @@ function AppContent() {
       </SafeAreaView>
     );
   }
-
-  const handleClearHistory = async () => {
-    if (!historyOwnerKey) {
-      return;
-    }
-
-    historyDataRef.current = [];
-    setHistoryData([]);
-    await saveSavedPasswords(historyOwnerKey, []);
-  };
 
   if (screen === 'signin') {
     return (
@@ -163,7 +164,6 @@ function AppContent() {
     <HistoryScream
       history={historyData}
       onBack={() => setScreen('home')}
-      onClear={handleClearHistory}
       onDeleteItem={handleDeleteHistoryItem}
     />
   );

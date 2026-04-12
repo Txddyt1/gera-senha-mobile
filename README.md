@@ -1,56 +1,59 @@
 # Demo
 
-Aplicacao full stack desenvolvida com Expo/React Native, Node.js e MySQL. O projeto combina autenticacao basica com JWT, geracao de senhas e historico local por usuario autenticado.
+Aplicação full stack desenvolvida com Expo/React Native, Node.js e MySQL. O projeto combina autenticação básica com JWT, geração de senhas e histórico persistido no banco por usuário autenticado.
 
-O app foi pensado para funcionar tanto na web quanto no mobile, com a mesma base de interface e uma API dedicada para cadastro, login e validacao de sessao.
+O app foi pensado para funcionar tanto na web quanto no mobile, com a mesma base de interface e uma API dedicada para cadastro, login e validação de sessão.
 
 ## Principais funcionalidades
 
-- Cadastro de usuarios com validacao de email unico
-- Validacao de email por regex no backend
-- Confirmacao de senha no cadastro
+- Cadastro de usuários com validação de e-mail único
+- Validação de e-mail por regex no backend
+- Confirmação de senha no cadastro
 - Criptografia de senha com `bcryptjs` antes de salvar no banco
 - Login com retorno de token JWT
-- Persistencia de sessao no cliente
-- Logout com remocao da sessao local
-- Geracao de senhas aleatorias no app
-- Historico local de senhas separado por usuario autenticado
-- Execucao da stack com Docker Compose
+- Persistência de sessão no cliente
+- Logout com remoção da sessão local
+- Geração de senhas aleatórias no app
+- Histórico de senhas salvo no MySQL por usuário autenticado
+- Criptografia reversível das senhas geradas antes de salvar no banco
+- Execução da stack com Docker Compose
 
-## Como a autenticacao funciona
+## Como a autenticação funciona
 
 ### Cadastro
 
 Na rota `POST /signup`, a API valida:
 
-- nome obrigatorio
-- email obrigatorio
-- email em formato valido
-- existencia previa do email no banco
+- nome obrigatório
+- e-mail obrigatório
+- e-mail em formato válido
+- existência prévia do e-mail no banco
 - igualdade entre `password` e `confirmPassword`
 
-Se tudo estiver correto, a senha e criptografada com `bcryptjs` e o usuario e salvo no MySQL.
+Se tudo estiver correto, a senha é criptografada com `bcryptjs` e o usuário é salvo no MySQL.
 
 ### Login
 
 Na rota `POST /signin`, a API:
 
-- busca o usuario pelo email
+- busca o usuário pelo e-mail
 - compara a senha enviada com o hash salvo no banco
-- gera um token JWT quando as credenciais sao validas
+- gera um token JWT quando as credenciais são válidas
 
-O cliente salva a sessao autenticada com:
+O cliente salva a sessão autenticada com:
 
-- `localStorage` na versao web
-- `AsyncStorage` na versao mobile
+- `localStorage` na versão web
+- `AsyncStorage` na versão mobile
 
-### Validacao de sessao
+As senhas geradas são salvas no MySQL em uma tabela vinculada ao usuário autenticado. Antes de gravar, o backend criptografa o valor da senha com `crypto` usando AES-256-GCM. A chave é derivada de uma constante fixa no código para fins acadêmicos; em produção, a chave deve ficar fora do código.
 
-Quando o app inicia, o frontend tenta restaurar a sessao salva e chama a rota `GET /session` para confirmar se o token ainda e valido.
+### Validação de sessão
+
+Quando o app inicia, o frontend tenta restaurar a sessão salva e chama a rota `GET /session` para confirmar se o token ainda é válido.
 
 ### Logout
 
-O logout chama `GET /signout` com o token JWT e, em seguida, remove a sessao do cliente.
+O logout chama `GET /signout` com o token JWT e, em seguida, remove a sessão do cliente.
 
 ## Stack utilizada
 
@@ -75,27 +78,27 @@ O logout chama `GET /signout` com o token JWT e, em seguida, remove a sessao do 
 
 - Docker
 - Docker Compose
-- Nginx para servir a versao web exportada
+- Nginx para servir a versão web exportada
 
 ## Estrutura principal do projeto
 
 - `App.js`: fluxo principal entre telas
-- `src/context/`: controle global da autenticacao
-- `src/screams/`: telas da aplicacao
-- `src/services/`: consumo da API e persistencia local
-- `src/utils/`: utilitarios de senha e ajustes de layout
+- `src/context/`: controle global da autenticação
+- `src/screams/`: telas da aplicação
+- `src/services/`: consumo da API e persistência da sessão
+- `src/utils/`: utilitários de senha e ajustes de layout
 - `server/src/`: API Express
-- `server/database/init.sql`: estrutura inicial da tabela de usuarios
-- `docker-compose.yml`: orquestracao de banco, API e frontend web
+- `server/database/init.sql`: estrutura inicial da tabela de usuários
+- `docker-compose.yml`: orquestração de banco, API e frontend web
 
 ## Como rodar o projeto
 
-### Pre-requisitos
+### Pré-requisitos
 
 - Node.js instalado
 - npm instalado
 - Docker e Docker Compose, se quiser subir a stack completa com containers
-- Android Studio ou Expo Go, se quiser testar a versao mobile
+- Android Studio ou Expo Go, se quiser testar a versão mobile
 
 ## Rodando sem Docker
 
@@ -110,7 +113,7 @@ copy .env.example .env
 npm run dev
 ```
 
-Por padrao, a API sobe em:
+Por padrão, a API sobe em:
 
 ```text
 http://localhost:3001
@@ -125,7 +128,7 @@ npm install
 npm start
 ```
 
-Comandos disponiveis:
+Comandos disponíveis:
 
 ```bash
 npm run android
@@ -140,19 +143,19 @@ Se quiser apontar o frontend para outra URL da API, crie um arquivo `.env` na ra
 EXPO_PUBLIC_API_BASE_URL=http://localhost:3001
 ```
 
-### Observacao para Android Emulator
+### Observação para Android Emulator
 
 No emulador Android, o app usa `http://10.0.2.2:3001` como fallback para acessar a API local do host.
 
 ## Rodando com Docker
 
-Para subir banco, API e versao web:
+Para subir banco, API e versão web:
 
 ```bash
 docker compose up --build
 ```
 
-Servicos expostos:
+Serviços expostos:
 
 - Frontend web: `http://localhost:8080`
 - API: `http://localhost:3001`
@@ -170,7 +173,7 @@ database: demo_auth
 
 ## Rotas principais da API
 
-### Publicas
+### Públicas
 
 - `GET /signin`
 - `POST /signup`
@@ -179,9 +182,12 @@ database: demo_auth
 ### Autenticadas
 
 - `GET /session`
+- `GET /passwords`
+- `POST /passwords`
+- `DELETE /passwords/:id`
 - `GET /signout`
 
-Envie o cabecalho:
+Envie o cabeçalho:
 
 ```text
 Authorization: Bearer <jwt>
@@ -209,12 +215,13 @@ Authorization: Bearer <jwt>
 
 ## Detalhes importantes
 
-- As credenciais de usuarios ficam no MySQL
-- O historico de senhas geradas fica salvo localmente no dispositivo
-- O historico local e separado por usuario autenticado
-- O token JWT e validado no backend antes de liberar rotas protegidas
-- O projeto possui versao web e mobile usando a mesma base de negocio
+- As credenciais de usuários ficam no MySQL
+- O histórico de senhas geradas fica salvo no MySQL
+- O histórico de senhas é separado por usuário autenticado
+- As senhas geradas ficam criptografadas no banco e são descriptografadas pelo backend ao listar para o usuário dono
+- O token JWT é validado no backend antes de liberar rotas protegidas
+- O projeto possui versão web e mobile usando a mesma base de negócio
 
 ## Objetivo do projeto
 
-Este repositorio demonstra uma implementacao simples e funcional de autenticacao com JWT em uma aplicacao Expo/React Native, integrando frontend, backend, banco relacional e Docker em uma unica entrega.
+Este repositório demonstra uma implementação simples e funcional de autenticação com JWT em uma aplicação Expo/React Native, integrando frontend, backend, banco relacional e Docker em uma única entrega.

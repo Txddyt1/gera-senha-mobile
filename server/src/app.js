@@ -4,6 +4,10 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const { pool } = require('./database');
 const { authenticateToken } = require('./middleware/authMiddleware');
+const {
+  decryptPasswordValue,
+  encryptPasswordValue,
+} = require('./utils/passwordCrypto');
 
 const app = express();
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -49,6 +53,21 @@ function sanitizeUser(user) {
     id: user.id,
     name: user.name,
     email: user.email,
+  };
+}
+
+function sanitizeSavedPassword(row) {
+  return {
+    id: row.id,
+    appName: row.app_name,
+    value: decryptPasswordValue({
+      authTag: row.auth_tag,
+      encryptedValue: row.encrypted_value,
+      iv: row.iv,
+    }),
+    createdAt: row.created_at instanceof Date
+      ? row.created_at.toISOString()
+      : new Date(row.created_at).toISOString(),
   };
 }
 
@@ -183,6 +202,92 @@ app.get('/session', authenticateToken, (request, response) => {
       name: request.user.name,
     },
   });
+});
+
+app.get('/passwords', authenticateToken, async (request, response) => {
+  try {
+    const [rows] = await pool.query(
+      `SELECT id, app_name, encrypted_value, iv, auth_tag, created_at
+       FROM saved_passwords
+       WHERE user_id = ?
+       ORDER BY created_at DESC, id DESC`,
+      [request.user.sub],
+    );
+
+    return response.json({
+      passwords: rows.map(sanitizeSavedPassword),
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: 'Nao foi possivel listar as senhas salvas.',
+    });
+  }
+});
+
+app.post('/passwords', authenticateToken, async (request, response) => {
+  const { appName, value } = request.body || {};
+  const normalizedAppName = String(appName || '').trim();
+
+  if (!normalizedAppName || !value) {
+    return response.status(400).json({
+      message: 'Nome do aplicativo e senha sao obrigatorios.',
+    });
+  }
+
+  try {
+    const encryptedPassword = encryptPasswordValue(value);
+    const [result] = await pool.query(
+      `INSERT INTO saved_passwords
+        (user_id, app_name, encrypted_value, iv, auth_tag)
+       VALUES (?, ?, ?, ?, ?)`,
+      [
+        request.user.sub,
+        normalizedAppName,
+        encryptedPassword.encryptedValue,
+        encryptedPassword.iv,
+        encryptedPassword.authTag,
+      ],
+    );
+
+    const [rows] = await pool.query(
+      `SELECT id, app_name, encrypted_value, iv, auth_tag, created_at
+       FROM saved_passwords
+       WHERE id = ? AND user_id = ?
+       LIMIT 1`,
+      [result.insertId, request.user.sub],
+    );
+
+    return response.status(201).json({
+      password: sanitizeSavedPassword(rows[0]),
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: 'Nao foi possivel salvar a senha.',
+    });
+  }
+});
+
+app.delete('/passwords/:id', authenticateToken, async (request, response) => {
+  try {
+    const [result] = await pool.query(
+      'DELETE FROM saved_passwords WHERE id = ? AND user_id = ?',
+      [request.params.id, request.user.sub],
+    );
+
+    if (result.affectedRows === 0) {
+      return response.status(404).json({
+        message: 'Senha salva nao encontrada.',
+      });
+    }
+
+    return response.json({
+      message: 'Senha removida com sucesso.',
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: 'Nao foi possivel remover a senha.',
+    });
+  }
 });
 
 app.get('/signout', authenticateToken, (request, response) => {

@@ -125,7 +125,7 @@ export default function HomeScream({ onNavigateToHistory, addToHistory }) {
         <View style={styles.passwordCard}>
           <Text style={styles.passwordLabel}>Senha gerada</Text>
           <Text style={styles.passwordValue}>
-            {password || 'Preencha com o botao gerar'}
+            {password || 'Preencha com o botão gerar'}
           </Text>
         </View>
 

@@ -101,7 +101,7 @@ export default function SigninScream({ onNavigateToSignup, initialEmail = '' }) 
           </Pressable>
 
           <View style={styles.footerRow}>
-            <Text style={styles.footerText}>Nao possui conta ainda? </Text>
+            <Text style={styles.footerText}>Não possui conta ainda? </Text>
             <Pressable onPress={() => onNavigateToSignup && onNavigateToSignup()}>
               <Text style={styles.footerLink}>Crie agora.</Text>
             </Pressable>

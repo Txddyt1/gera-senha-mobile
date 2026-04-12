@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { Feather } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import {
+  Alert,
   Animated,
   Pressable,
   SafeAreaView,
@@ -33,6 +34,24 @@ export default function HistoryScream({ history = [], onBack, onDeleteItem }) {
   };
 
   const handleDelete = async (id) => {
+    Alert.alert(
+      'Excluir senha',
+      'Tem certeza que deseja excluir esta senha salva?',
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+        },
+        {
+          text: 'Excluir',
+          style: 'destructive',
+          onPress: () => confirmDelete(id),
+        },
+      ],
+    );
+  };
+
+  const confirmDelete = async (id) => {
     setVisiblePasswords(prev => {
       const nextState = { ...prev };
       delete nextState[id];
