@@ -42,8 +42,8 @@ services:
       MYSQL_USER: demo_user
       MYSQL_PASSWORD: demo_pass
       MYSQL_DATABASE: demo_auth
-      JWT_SECRET: troque-esta-chave-em-producao
-      JWT_EXPIRES_IN: 1h
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
       CORS_ORIGIN: http://localhost:8080
     ports:
       - "3001:3001"
