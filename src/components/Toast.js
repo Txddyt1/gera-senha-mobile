@@ -1,44 +1,23 @@
 import React from 'react';
-import { Animated, Text, StyleSheet } from 'react-native';
+import { Animated, Text } from 'react-native';
 
 export default function Toast({ message, animatedValue }) {
   if (!message) return null;
 
   return (
     <Animated.View
+      className="absolute bottom-9 left-5 right-5 items-center justify-center rounded-lg bg-[#4169E1] px-3.5 py-2.5"
       pointerEvents="none"
-      style={[
-        styles.toast,
-        {
-          opacity: animatedValue,
-          transform: [
-            {
-              translateY: animatedValue.interpolate({ inputRange: [0, 1], outputRange: [16, 0] }),
-            },
-          ],
-        },
-      ]}
+      style={{
+        opacity: animatedValue,
+        transform: [
+          {
+            translateY: animatedValue.interpolate({ inputRange: [0, 1], outputRange: [16, 0] }),
+          },
+        ],
+      }}
     >
-      <Text style={styles.toastText}>{message}</Text>
+      <Text className="text-sm text-white">{message}</Text>
     </Animated.View>
   );
 }
-
-const styles = StyleSheet.create({
-  toast: {
-    position: 'absolute',
-    bottom: 36,
-    left: 20,
-    right: 20,
-    backgroundColor: '#4169E1',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  toastText: {
-    color: '#fff',
-    fontSize: 14,
-  },
-});

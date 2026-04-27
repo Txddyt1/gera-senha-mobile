@@ -7,7 +7,6 @@ import {
   Pressable,
   SafeAreaView,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from 'react-native';
@@ -90,35 +89,44 @@ export default function HistoryScream({ history = [], onBack, onDeleteItem }) {
   const maskPassword = (password) => password.replace(/./g, '*');
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView className="flex-1 bg-white" style={{ paddingTop: androidTopInset }}>
       <StatusBar style="dark" />
 
       <ScrollView
+        className="flex-1"
+        contentContainerClassName="flex-grow items-center justify-center px-[18px] py-8"
         showsVerticalScrollIndicator={false}
-        style={styles.list}
-        contentContainerStyle={styles.listContent}
       >
-        <View style={styles.contentGroup}>
-          <Text style={styles.title}>SENHAS SALVAS</Text>
+        <View className="w-full max-w-[340px] items-center justify-center">
+          <Text className="mb-7 text-center text-[28px] font-extrabold text-[#0E3D7A]">
+            SENHAS SALVAS
+          </Text>
 
           {history.length === 0 ? (
-            <Text style={styles.emptyText}>Nenhuma senha salva ainda.</Text>
+            <Text className="mb-[18px] text-center text-[#556274]">
+              Nenhuma senha salva ainda.
+            </Text>
           ) : null}
 
           {history.map((item) => (
-            <View key={item.id} style={styles.card}>
-              <View style={styles.cardBody}>
-                <Text style={styles.appName}>{item.appName || 'Aplicativo'}</Text>
-                <Text style={styles.passwordText}>
+            <View
+              key={item.id}
+              className="mb-[14px] w-full flex-row items-center justify-between rounded-[16px] border-2 border-[#1F1F1F] bg-white px-[18px] py-[14px]"
+            >
+              <View className="flex-1">
+                <Text className="mb-2 text-[16px] font-bold text-[#1B1B1B]">
+                  {item.appName || 'Aplicativo'}
+                </Text>
+                <Text className="text-[15px] tracking-[1px] text-[#444444]">
                   {visiblePasswords[item.id] ? item.value : maskPassword(item.value)}
                 </Text>
               </View>
 
-              <View style={styles.actions}>
+              <View className="ml-3 flex-row items-center gap-3">
                 <Pressable
+                  className="min-w-[24px] items-center justify-center"
                   hitSlop={10}
                   onPress={() => togglePasswordVisibility(item.id)}
-                  style={styles.iconAction}
                 >
                   <Feather
                     color="#555555"
@@ -128,17 +136,17 @@ export default function HistoryScream({ history = [], onBack, onDeleteItem }) {
                 </Pressable>
 
                 <Pressable
+                  className="min-w-[24px] items-center justify-center"
                   hitSlop={10}
                   onPress={() => handleCopy(item.value)}
-                  style={styles.iconAction}
                 >
                   <Feather color="#D9A300" name="copy" size={20} />
                 </Pressable>
 
                 <Pressable
+                  className="min-w-[24px] items-center justify-center"
                   hitSlop={10}
                   onPress={() => handleDelete(item.id)}
-                  style={styles.iconAction}
                 >
                   <Feather color="#A7B3BF" name="trash-2" size={20} />
                 </Pressable>
@@ -146,8 +154,11 @@ export default function HistoryScream({ history = [], onBack, onDeleteItem }) {
             </View>
           ))}
 
-          <Pressable onPress={onBack} style={styles.backButton}>
-            <Text style={styles.backButtonText}>VOLTAR</Text>
+          <Pressable
+            className="mt-2 w-[100px] rounded-[4px] bg-[#4DA5F5] px-[18px] py-2.5 shadow-history-button"
+            onPress={onBack}
+          >
+            <Text className="text-center text-[15px] font-bold text-white">VOLTAR</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -156,96 +167,3 @@ export default function HistoryScream({ history = [], onBack, onDeleteItem }) {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    paddingTop: androidTopInset,
-  },
-  title: {
-    marginBottom: 28,
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#0E3D7A',
-    textAlign: 'center',
-  },
-  list: {
-    flex: 1,
-  },
-  listContent: {
-    flexGrow: 1,
-    paddingHorizontal: 18,
-    paddingVertical: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  contentGroup: {
-    width: '100%',
-    maxWidth: 340,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyText: {
-    textAlign: 'center',
-    color: '#556274',
-    marginBottom: 18,
-  },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
-    marginBottom: 14,
-    borderWidth: 2,
-    borderColor: '#1F1F1F',
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-  },
-  cardBody: {
-    flex: 1,
-  },
-  appName: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1B1B1B',
-    marginBottom: 8,
-  },
-  passwordText: {
-    fontSize: 15,
-    color: '#444444',
-    letterSpacing: 1,
-  },
-  actions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 12,
-    gap: 12,
-  },
-  iconAction: {
-    minWidth: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  backButton: {
-    width: 100,
-    marginTop: 8,
-    borderRadius: 4,
-    backgroundColor: '#4DA5F5',
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-    shadowColor: '#000000',
-    shadowOpacity: 0.12,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  backButtonText: {
-    textAlign: 'center',
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-});

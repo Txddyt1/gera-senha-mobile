@@ -4,7 +4,6 @@ import {
   Platform,
   Pressable,
   SafeAreaView,
-  StyleSheet,
   Text,
   TextInput,
   View,
@@ -54,202 +53,112 @@ export default function SignupScream({ onBack }) {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView className="flex-1 bg-white" style={{ paddingTop: androidTopInset }}>
       <StatusBar style="dark" />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.keyboardView}
+        className="flex-1"
       >
-        <View style={styles.header}>
-          <Pressable hitSlop={10} onPress={() => onBack && onBack()} style={styles.backButton}>
-            <Text style={styles.backArrow}>{'<'}</Text>
+        <View className="h-14 flex-row items-center border-b border-[#ECECEC] px-4">
+          <Pressable className="w-10 justify-center" hitSlop={10} onPress={() => onBack && onBack()}>
+            <Text className="text-[24px] text-[#1B1B1B]">{'<'}</Text>
           </Pressable>
-          <Text style={styles.headerTitle}>Signup</Text>
-          <View style={styles.headerSpacer} />
+          <Text className="flex-1 text-[18px] font-semibold text-[#1B1B1B]">Signup</Text>
+          <View className="w-10" />
         </View>
 
-        <View style={styles.content}>
-          <Text style={styles.title}>SIGN UP</Text>
+        <View className="flex-1 justify-center px-8">
+          <Text className="mb-[46px] text-center text-[26px] font-extrabold text-[#4DA5F5]">
+            SIGN UP
+          </Text>
 
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Nome</Text>
+          <View className="mb-[14px]">
+            <Text className="mb-2 text-[16px] text-[#484848]">Nome</Text>
             <TextInput
+              className="h-[54px] rounded-[3px] border border-[#2E84B6] bg-[#56BDF2] px-[14px] text-[16px] text-[#183648]"
               editable={!isSubmitting}
               onChangeText={setName}
               placeholder="Digite seu nome"
               placeholderTextColor="#4F7F98"
-              style={styles.input}
               value={name}
             />
           </View>
 
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Email</Text>
+          <View className="mb-[14px]">
+            <Text className="mb-2 text-[16px] text-[#484848]">Email</Text>
             <TextInput
               autoCapitalize="none"
+              className="h-[54px] rounded-[3px] border border-[#2E84B6] bg-[#56BDF2] px-[14px] text-[16px] text-[#183648]"
               editable={!isSubmitting}
               keyboardType="email-address"
               onChangeText={setEmail}
               placeholder="Digite seu email"
               placeholderTextColor="#4F7F98"
-              style={styles.input}
               value={email}
             />
           </View>
 
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Senha</Text>
+          <View className="mb-[14px]">
+            <Text className="mb-2 text-[16px] text-[#484848]">Senha</Text>
             <TextInput
               autoCapitalize="none"
+              className="h-[54px] rounded-[3px] border border-[#2E84B6] bg-[#56BDF2] px-[14px] text-[16px] text-[#183648]"
               editable={!isSubmitting}
               onChangeText={setPassword}
               placeholder="Crie uma senha"
               placeholderTextColor="#4F7F98"
               secureTextEntry
-              style={styles.input}
               value={password}
             />
           </View>
 
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Confirmar Senha</Text>
+          <View className="mb-[14px]">
+            <Text className="mb-2 text-[16px] text-[#484848]">Confirmar Senha</Text>
             <TextInput
               autoCapitalize="none"
+              className="h-[54px] rounded-[3px] border border-[#2E84B6] bg-[#56BDF2] px-[14px] text-[16px] text-[#183648]"
               editable={!isSubmitting}
               onChangeText={setConfirmPassword}
               placeholder="Confirme sua senha"
               placeholderTextColor="#4F7F98"
               secureTextEntry
-              style={styles.input}
               value={confirmPassword}
             />
           </View>
 
           {!passwordsMatch && confirmPassword ? (
-            <Text style={styles.errorText}>As senhas precisam ser iguais.</Text>
+            <Text className="mb-1.5 mt-0.5 text-center text-[#B3261E]">
+              As senhas precisam ser iguais.
+            </Text>
           ) : null}
 
-          {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
+          {errorMessage ? (
+            <Text className="mb-1.5 mt-0.5 text-center text-[#B3261E]">{errorMessage}</Text>
+          ) : null}
 
           <Pressable
+            className={`mt-3 min-w-[144px] self-center rounded-[4px] border px-5 py-3 ${
+              isSubmitDisabled
+                ? 'border-[#A8A8A8] bg-[#D9D9D9]'
+                : 'border-[#2E84B6] bg-[#4DA5F5]'
+            }`}
             disabled={isSubmitDisabled}
             onPress={handleRegister}
-            style={[styles.button, isSubmitDisabled && styles.buttonDisabled]}
           >
-            <Text style={[styles.buttonText, isSubmitDisabled && styles.buttonTextDisabled]}>
+            <Text
+              className={`text-center text-[15px] font-bold ${
+                isSubmitDisabled ? 'text-[#8F8F8F]' : 'text-white'
+              }`}
+            >
               {isSubmitting ? 'REGISTRANDO...' : 'REGISTRAR'}
             </Text>
           </Pressable>
 
-          <Pressable onPress={() => onBack && onBack()} style={styles.backLinkWrapper}>
-            <Text style={styles.backLink}>Voltar</Text>
+          <Pressable className="mt-[14px] self-center" onPress={() => onBack && onBack()}>
+            <Text className="text-[14px] text-[#575757]">Voltar</Text>
           </Pressable>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    paddingTop: androidTopInset,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  header: {
-    height: 56,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ECECEC',
-  },
-  backButton: {
-    width: 40,
-    justifyContent: 'center',
-  },
-  backArrow: {
-    fontSize: 24,
-    color: '#1B1B1B',
-  },
-  headerTitle: {
-    flex: 1,
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1B1B1B',
-  },
-  headerSpacer: {
-    width: 40,
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-  },
-  title: {
-    marginBottom: 46,
-    textAlign: 'center',
-    fontSize: 26,
-    fontWeight: '800',
-    color: '#4DA5F5',
-  },
-  fieldGroup: {
-    marginBottom: 14,
-  },
-  label: {
-    marginBottom: 8,
-    fontSize: 16,
-    color: '#484848',
-  },
-  input: {
-    height: 54,
-    borderWidth: 1,
-    borderColor: '#2E84B6',
-    borderRadius: 3,
-    backgroundColor: '#56BDF2',
-    paddingHorizontal: 14,
-    fontSize: 16,
-    color: '#183648',
-  },
-  errorText: {
-    marginTop: 2,
-    marginBottom: 6,
-    textAlign: 'center',
-    color: '#B3261E',
-  },
-  button: {
-    alignSelf: 'center',
-    minWidth: 144,
-    marginTop: 12,
-    borderWidth: 1,
-    borderColor: '#2E84B6',
-    borderRadius: 4,
-    backgroundColor: '#4DA5F5',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-  },
-  buttonDisabled: {
-    borderColor: '#A8A8A8',
-    backgroundColor: '#D9D9D9',
-  },
-  buttonText: {
-    textAlign: 'center',
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  buttonTextDisabled: {
-    color: '#8F8F8F',
-  },
-  backLinkWrapper: {
-    marginTop: 14,
-    alignSelf: 'center',
-  },
-  backLink: {
-    fontSize: 14,
-    color: '#575757',
-  },
-});

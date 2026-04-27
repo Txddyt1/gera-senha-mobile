@@ -1,5 +1,7 @@
+import './global.css';
+
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, SafeAreaView, StyleSheet, Text } from 'react-native';
+import { ActivityIndicator, SafeAreaView, Text } from 'react-native';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import HomeScream from './src/screams/homeScream';
 import HistoryScream from './src/screams/historyScream';
@@ -132,9 +134,9 @@ function AppContent() {
 
   if (isBootstrapping) {
     return (
-      <SafeAreaView style={styles.loadingContainer}>
+      <SafeAreaView className="flex-1 items-center justify-center bg-white px-6">
         <ActivityIndicator color="#0E3D7A" size="large" />
-        <Text style={styles.loadingText}>Carregando sessao...</Text>
+        <Text className="mt-4 text-[16px] text-[#0E3D7A]">Carregando sessao...</Text>
       </SafeAreaView>
     );
   }
@@ -168,18 +170,3 @@ function AppContent() {
     />
   );
 }
-
-const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 24,
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#0E3D7A',
-  },
-});

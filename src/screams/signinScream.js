@@ -4,7 +4,6 @@ import {
   Platform,
   Pressable,
   SafeAreaView,
-  StyleSheet,
   Text,
   TextInput,
   View,
@@ -47,63 +46,75 @@ export default function SigninScream({ onNavigateToSignup, initialEmail = '' }) 
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView className="flex-1 bg-white" style={{ paddingTop: androidTopInset }}>
       <StatusBar style="dark" />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.keyboardView}
+        className="flex-1"
       >
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Signin</Text>
+        <View className="h-14 justify-center border-b border-[#ECECEC] px-6">
+          <Text className="text-[18px] font-semibold text-[#1B1B1B]">Signin</Text>
         </View>
 
-        <View style={styles.content}>
-          <Text style={styles.title}>SIGN IN</Text>
+        <View className="flex-1 justify-center px-8">
+          <Text className="mb-[72px] text-center text-[26px] font-extrabold text-[#4DA5F5]">
+            SIGN IN
+          </Text>
 
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Email</Text>
+          <View className="mb-[18px]">
+            <Text className="mb-2 text-[16px] text-[#484848]">Email</Text>
             <TextInput
               autoCapitalize="none"
+              className="h-[54px] rounded-[3px] border border-[#2E84B6] bg-[#56BDF2] px-[14px] text-[16px] text-[#183648]"
               editable={!isSubmitting}
               keyboardType="email-address"
               onChangeText={setEmail}
               placeholder="Digite seu email"
               placeholderTextColor="#4F7F98"
-              style={styles.input}
               value={email}
             />
           </View>
 
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Senha</Text>
+          <View className="mb-[18px]">
+            <Text className="mb-2 text-[16px] text-[#484848]">Senha</Text>
             <TextInput
               autoCapitalize="none"
+              className="h-[54px] rounded-[3px] border border-[#2E84B6] bg-[#56BDF2] px-[14px] text-[16px] text-[#183648]"
               editable={!isSubmitting}
               onChangeText={setPassword}
               placeholder="Digite sua senha"
               placeholderTextColor="#4F7F98"
               secureTextEntry
-              style={styles.input}
               value={password}
             />
           </View>
 
-          {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
+          {errorMessage ? (
+            <Text className="mb-1 mt-1 text-center text-[#B3261E]">{errorMessage}</Text>
+          ) : null}
 
           <Pressable
+            className={`mt-4 min-w-[128px] self-center rounded-[4px] border px-5 py-3 ${
+              isSubmitDisabled
+                ? 'border-[#A8A8A8] bg-[#D9D9D9]'
+                : 'border-[#2E84B6] bg-[#4DA5F5]'
+            }`}
             disabled={isSubmitDisabled}
             onPress={handleSubmit}
-            style={[styles.button, isSubmitDisabled && styles.buttonDisabled]}
           >
-            <Text style={[styles.buttonText, isSubmitDisabled && styles.buttonTextDisabled]}>
+            <Text
+              className={`text-center text-[15px] font-bold ${
+                isSubmitDisabled ? 'text-[#8F8F8F]' : 'text-white'
+              }`}
+            >
               {isSubmitting ? 'ENTRANDO...' : 'ENTRAR'}
             </Text>
           </Pressable>
 
-          <View style={styles.footerRow}>
-            <Text style={styles.footerText}>Não possui conta ainda? </Text>
+          <View className="mt-[18px] flex-row items-center justify-center">
+            <Text className="text-[13px] text-[#575757]">NÃ£o possui conta ainda? </Text>
             <Pressable onPress={() => onNavigateToSignup && onNavigateToSignup()}>
-              <Text style={styles.footerLink}>Crie agora.</Text>
+              <Text className="text-[13px] font-semibold text-[#3A3A3A]">Crie agora.</Text>
             </Pressable>
           </View>
         </View>
@@ -111,101 +122,3 @@ export default function SigninScream({ onNavigateToSignup, initialEmail = '' }) 
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    paddingTop: androidTopInset,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  header: {
-    height: 56,
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ECECEC',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1B1B1B',
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-  },
-  title: {
-    marginBottom: 72,
-    textAlign: 'center',
-    fontSize: 26,
-    fontWeight: '800',
-    color: '#4DA5F5',
-  },
-  fieldGroup: {
-    marginBottom: 18,
-  },
-  label: {
-    marginBottom: 8,
-    fontSize: 16,
-    color: '#484848',
-  },
-  input: {
-    height: 54,
-    borderWidth: 1,
-    borderColor: '#2E84B6',
-    borderRadius: 3,
-    backgroundColor: '#56BDF2',
-    paddingHorizontal: 14,
-    fontSize: 16,
-    color: '#183648',
-  },
-  errorText: {
-    marginTop: 4,
-    marginBottom: 4,
-    textAlign: 'center',
-    color: '#B3261E',
-  },
-  button: {
-    alignSelf: 'center',
-    minWidth: 128,
-    marginTop: 16,
-    borderWidth: 1,
-    borderColor: '#2E84B6',
-    borderRadius: 4,
-    backgroundColor: '#4DA5F5',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-  },
-  buttonDisabled: {
-    borderColor: '#A8A8A8',
-    backgroundColor: '#D9D9D9',
-  },
-  buttonText: {
-    textAlign: 'center',
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  buttonTextDisabled: {
-    color: '#8F8F8F',
-  },
-  footerRow: {
-    marginTop: 18,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  footerText: {
-    fontSize: 13,
-    color: '#575757',
-  },
-  footerLink: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#3A3A3A',
-  },
-});
