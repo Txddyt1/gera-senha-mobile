@@ -1,11 +1,11 @@
 import React, { useRef, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import {
-  Animated,
   Image,
   Modal,
   Pressable,
   SafeAreaView,
+  ScrollView,
   Text,
   TextInput,
   View,
@@ -14,6 +14,7 @@ import generatePassword from '../utils/generatePassword';
 import { copyToClipboard } from '../services/clipboardService';
 import Toast from '../components/Toast';
 import { useAuth } from '../context/AuthContext';
+import { contentShellStyle } from '../utils/layout';
 import { androidTopInset } from '../utils/screenInsets';
 
 export default function HomeScream({ onNavigateToHistory, addToHistory }) {
@@ -22,7 +23,6 @@ export default function HomeScream({ onNavigateToHistory, addToHistory }) {
   const [applicationName, setApplicationName] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
-  const toastAnim = useRef(new Animated.Value(0)).current;
   const toastTimeoutRef = useRef(null);
 
   const handleCopy = async () => {
@@ -84,20 +84,9 @@ export default function HomeScream({ onNavigateToHistory, addToHistory }) {
     }
 
     setToastMessage(message);
-    Animated.timing(toastAnim, {
-      toValue: 1,
-      duration: 250,
-      useNativeDriver: true,
-    }).start();
 
     toastTimeoutRef.current = setTimeout(() => {
-      Animated.timing(toastAnim, {
-        toValue: 0,
-        duration: 250,
-        useNativeDriver: true,
-      }).start(() => {
-        setToastMessage('');
-      });
+      setToastMessage('');
       toastTimeoutRef.current = null;
     }, 1600);
   }
@@ -120,57 +109,63 @@ export default function HomeScream({ onNavigateToHistory, addToHistory }) {
         </Pressable>
       </View>
 
-      <View className="flex-1 items-center justify-center px-6">
-        <Text className="text-center text-[28px] font-extrabold text-[#0E3D7A]">
-          GERADOR DE SENHA
-        </Text>
-
-        <Image
-          className="mt-6 h-[180px] w-[180px]"
-          resizeMode="contain"
-          source={require('../../assets/senha.png')}
-        />
-
-        <View className="mt-[18px] w-full rounded-[18px] border border-[#DDE6F4] bg-white px-5 py-[18px] shadow-card-soft">
-          <Text className="mb-2 text-center text-[14px] text-[#556274]">Senha gerada</Text>
-          <Text className="text-center text-[18px] font-bold text-[#0B1F33]">
-            {password || 'Preencha com o botão gerar'}
+      <ScrollView
+        className="flex-1"
+        contentContainerClassName="flex-grow justify-center px-6 py-8"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={contentShellStyle}>
+          <Text className="text-center text-[28px] font-extrabold text-[#0E3D7A]">
+            GERADOR DE SENHA
           </Text>
+
+          <Image
+            className="mt-6 h-[180px] w-[180px] self-center"
+            resizeMode="contain"
+            source={require('../../assets/senha.png')}
+          />
+
+          <View className="mt-[18px] w-full rounded-[18px] border border-[#DDE6F4] bg-white px-5 py-[18px] shadow-card-soft">
+            <Text className="mb-2 text-center text-[14px] text-[#556274]">Senha gerada</Text>
+            <Text className="text-center text-[18px] font-bold text-[#0B1F33]">
+              {password || 'Preencha com o botao gerar'}
+            </Text>
+          </View>
+
+          <View className="mt-[22px] w-full gap-3">
+            <Pressable className="rounded-lg bg-[#2E74B8] py-3.5" onPress={handleGenerate}>
+              <Text className="text-center text-[16px] font-bold uppercase text-white">Gerar</Text>
+            </Pressable>
+
+            <Pressable
+              className={`rounded-lg py-3.5 ${
+                isSaveDisabled ? 'bg-[#A8A8A8]' : 'bg-[#2E74B8]'
+              }`}
+              disabled={isSaveDisabled}
+              onPress={handleOpenSaveModal}
+            >
+              <Text className="text-center text-[16px] font-bold uppercase text-white">Salvar</Text>
+            </Pressable>
+
+            <Pressable
+              className={`rounded-lg py-3.5 ${
+                password ? 'bg-[#0E3D7A]' : 'bg-[#A8A8A8]'
+              }`}
+              disabled={!password}
+              onPress={handleCopy}
+            >
+              <Text className="text-center text-[16px] font-bold text-white">COPIAR</Text>
+            </Pressable>
+
+            <Pressable
+              className="rounded-lg bg-[#0E3D7A] py-3.5"
+              onPress={() => onNavigateToHistory && onNavigateToHistory()}
+            >
+              <Text className="text-center text-[16px] font-bold text-white">SENHAS SALVAS</Text>
+            </Pressable>
+          </View>
         </View>
-
-        <View className="mt-[22px] w-full gap-3">
-          <Pressable className="rounded-lg bg-[#2E74B8] py-3.5" onPress={handleGenerate}>
-            <Text className="text-center text-[16px] font-bold uppercase text-white">Gerar</Text>
-          </Pressable>
-
-          <Pressable
-            className={`rounded-lg py-3.5 ${
-              isSaveDisabled ? 'bg-[#A8A8A8]' : 'bg-[#2E74B8]'
-            }`}
-            disabled={isSaveDisabled}
-            onPress={handleOpenSaveModal}
-          >
-            <Text className="text-center text-[16px] font-bold uppercase text-white">Salvar</Text>
-          </Pressable>
-
-          <Pressable
-            className={`rounded-lg py-3.5 ${
-              password ? 'bg-[#0E3D7A]' : 'bg-[#A8A8A8]'
-            }`}
-            disabled={!password}
-            onPress={handleCopy}
-          >
-            <Text className="text-center text-[16px] font-bold text-white">COPIAR</Text>
-          </Pressable>
-
-          <Pressable
-            className="rounded-lg bg-[#0E3D7A] py-3.5"
-            onPress={() => onNavigateToHistory && onNavigateToHistory()}
-          >
-            <Text className="text-center text-[16px] font-bold text-white">SENHAS SALVAS</Text>
-          </Pressable>
-        </View>
-      </View>
+      </ScrollView>
 
       <Modal
         animationType="fade"
@@ -229,7 +224,7 @@ export default function HomeScream({ onNavigateToHistory, addToHistory }) {
         </View>
       </Modal>
 
-      <Toast animatedValue={toastAnim} message={toastMessage} />
+      <Toast message={toastMessage} />
     </SafeAreaView>
   );
 }

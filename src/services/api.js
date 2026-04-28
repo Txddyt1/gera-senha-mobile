@@ -4,11 +4,32 @@ function trimTrailingSlash(value) {
   return value.replace(/\/+$/, '');
 }
 
+function resolveEnvUrl(envUrl) {
+  const normalizedUrl = trimTrailingSlash(envUrl);
+
+  if (Platform.OS !== 'android') {
+    return normalizedUrl;
+  }
+
+  try {
+    const parsedUrl = new URL(normalizedUrl);
+
+    // Android Emulator cannot reach the host machine through localhost.
+    if (parsedUrl.hostname === 'localhost' || parsedUrl.hostname === '127.0.0.1') {
+      parsedUrl.hostname = '10.0.2.2';
+    }
+
+    return trimTrailingSlash(parsedUrl.toString());
+  } catch (error) {
+    return normalizedUrl;
+  }
+}
+
 function resolveApiBaseUrl() {
   const envUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim();
 
   if (envUrl) {
-    return trimTrailingSlash(envUrl);
+    return resolveEnvUrl(envUrl);
   }
 
   if (Platform.OS === 'web' && typeof window !== 'undefined') {

@@ -62,6 +62,10 @@ function AppContent() {
         return;
       }
 
+      if (screen !== 'history') {
+        return;
+      }
+
       try {
         const response = await listPasswords(token);
         const normalizedHistory = (response.passwords || []).map(normalizeHistoryItem);
@@ -87,7 +91,7 @@ function AppContent() {
     return () => {
       isMounted = false;
     };
-  }, [token]);
+  }, [screen, token]);
 
   const addToHistory = async ({ appName, value }) => {
     if (!token || !appName?.trim() || !value) {

@@ -4,12 +4,14 @@ import {
   Platform,
   Pressable,
   SafeAreaView,
+  ScrollView,
   Text,
   TextInput,
   View,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '../context/AuthContext';
+import { formShellStyle } from '../utils/layout';
 import { androidTopInset } from '../utils/screenInsets';
 
 export default function SignupScream({ onBack }) {
@@ -67,97 +69,104 @@ export default function SignupScream({ onBack }) {
           <View className="w-10" />
         </View>
 
-        <View className="flex-1 justify-center px-8">
-          <Text className="mb-[46px] text-center text-[26px] font-extrabold text-[#4DA5F5]">
-            SIGN UP
-          </Text>
-
-          <View className="mb-[14px]">
-            <Text className="mb-2 text-[16px] text-[#484848]">Nome</Text>
-            <TextInput
-              className="h-[54px] rounded-[3px] border border-[#2E84B6] bg-[#56BDF2] px-[14px] text-[16px] text-[#183648]"
-              editable={!isSubmitting}
-              onChangeText={setName}
-              placeholder="Digite seu nome"
-              placeholderTextColor="#4F7F98"
-              value={name}
-            />
-          </View>
-
-          <View className="mb-[14px]">
-            <Text className="mb-2 text-[16px] text-[#484848]">Email</Text>
-            <TextInput
-              autoCapitalize="none"
-              className="h-[54px] rounded-[3px] border border-[#2E84B6] bg-[#56BDF2] px-[14px] text-[16px] text-[#183648]"
-              editable={!isSubmitting}
-              keyboardType="email-address"
-              onChangeText={setEmail}
-              placeholder="Digite seu email"
-              placeholderTextColor="#4F7F98"
-              value={email}
-            />
-          </View>
-
-          <View className="mb-[14px]">
-            <Text className="mb-2 text-[16px] text-[#484848]">Senha</Text>
-            <TextInput
-              autoCapitalize="none"
-              className="h-[54px] rounded-[3px] border border-[#2E84B6] bg-[#56BDF2] px-[14px] text-[16px] text-[#183648]"
-              editable={!isSubmitting}
-              onChangeText={setPassword}
-              placeholder="Crie uma senha"
-              placeholderTextColor="#4F7F98"
-              secureTextEntry
-              value={password}
-            />
-          </View>
-
-          <View className="mb-[14px]">
-            <Text className="mb-2 text-[16px] text-[#484848]">Confirmar Senha</Text>
-            <TextInput
-              autoCapitalize="none"
-              className="h-[54px] rounded-[3px] border border-[#2E84B6] bg-[#56BDF2] px-[14px] text-[16px] text-[#183648]"
-              editable={!isSubmitting}
-              onChangeText={setConfirmPassword}
-              placeholder="Confirme sua senha"
-              placeholderTextColor="#4F7F98"
-              secureTextEntry
-              value={confirmPassword}
-            />
-          </View>
-
-          {!passwordsMatch && confirmPassword ? (
-            <Text className="mb-1.5 mt-0.5 text-center text-[#B3261E]">
-              As senhas precisam ser iguais.
+        <ScrollView
+          className="flex-1"
+          contentContainerClassName="flex-grow justify-center px-6 py-8"
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={formShellStyle}>
+            <Text className="mb-11 text-center text-[26px] font-extrabold text-[#4DA5F5]">
+              SIGN UP
             </Text>
-          ) : null}
 
-          {errorMessage ? (
-            <Text className="mb-1.5 mt-0.5 text-center text-[#B3261E]">{errorMessage}</Text>
-          ) : null}
+            <View className="mb-[14px]">
+              <Text className="mb-2 text-[16px] text-[#484848]">Nome</Text>
+              <TextInput
+                className="h-[54px] rounded-[3px] border border-[#2E84B6] bg-[#56BDF2] px-[14px] text-[16px] text-[#183648]"
+                editable={!isSubmitting}
+                onChangeText={setName}
+                placeholder="Digite seu nome"
+                placeholderTextColor="#4F7F98"
+                value={name}
+              />
+            </View>
 
-          <Pressable
-            className={`mt-3 min-w-[144px] self-center rounded-[4px] border px-5 py-3 ${
-              isSubmitDisabled
-                ? 'border-[#A8A8A8] bg-[#D9D9D9]'
-                : 'border-[#2E84B6] bg-[#4DA5F5]'
-            }`}
-            disabled={isSubmitDisabled}
-            onPress={handleRegister}
-          >
-            <Text
-              className={`text-center text-[15px] font-bold ${
-                isSubmitDisabled ? 'text-[#8F8F8F]' : 'text-white'
+            <View className="mb-[14px]">
+              <Text className="mb-2 text-[16px] text-[#484848]">Email</Text>
+              <TextInput
+                autoCapitalize="none"
+                className="h-[54px] rounded-[3px] border border-[#2E84B6] bg-[#56BDF2] px-[14px] text-[16px] text-[#183648]"
+                editable={!isSubmitting}
+                keyboardType="email-address"
+                onChangeText={setEmail}
+                placeholder="Digite seu email"
+                placeholderTextColor="#4F7F98"
+                value={email}
+              />
+            </View>
+
+            <View className="mb-[14px]">
+              <Text className="mb-2 text-[16px] text-[#484848]">Senha</Text>
+              <TextInput
+                autoCapitalize="none"
+                className="h-[54px] rounded-[3px] border border-[#2E84B6] bg-[#56BDF2] px-[14px] text-[16px] text-[#183648]"
+                editable={!isSubmitting}
+                onChangeText={setPassword}
+                placeholder="Crie uma senha"
+                placeholderTextColor="#4F7F98"
+                secureTextEntry
+                value={password}
+              />
+            </View>
+
+            <View className="mb-[14px]">
+              <Text className="mb-2 text-[16px] text-[#484848]">Confirmar Senha</Text>
+              <TextInput
+                autoCapitalize="none"
+                className="h-[54px] rounded-[3px] border border-[#2E84B6] bg-[#56BDF2] px-[14px] text-[16px] text-[#183648]"
+                editable={!isSubmitting}
+                onChangeText={setConfirmPassword}
+                placeholder="Confirme sua senha"
+                placeholderTextColor="#4F7F98"
+                secureTextEntry
+                value={confirmPassword}
+              />
+            </View>
+
+            {!passwordsMatch && confirmPassword ? (
+              <Text className="mb-1.5 mt-0.5 text-center text-[#B3261E]">
+                As senhas precisam ser iguais.
+              </Text>
+            ) : null}
+
+            {errorMessage ? (
+              <Text className="mb-1.5 mt-0.5 text-center text-[#B3261E]">{errorMessage}</Text>
+            ) : null}
+
+            <Pressable
+              className={`mt-3 min-w-[144px] self-center rounded-[4px] border px-5 py-3 ${
+                isSubmitDisabled
+                  ? 'border-[#A8A8A8] bg-[#D9D9D9]'
+                  : 'border-[#2E84B6] bg-[#4DA5F5]'
               }`}
+              disabled={isSubmitDisabled}
+              onPress={handleRegister}
             >
-              {isSubmitting ? 'REGISTRANDO...' : 'REGISTRAR'}
-            </Text>
-          </Pressable>
+              <Text
+                className={`text-center text-[15px] font-bold ${
+                  isSubmitDisabled ? 'text-[#8F8F8F]' : 'text-white'
+                }`}
+              >
+                {isSubmitting ? 'REGISTRANDO...' : 'REGISTRAR'}
+              </Text>
+            </Pressable>
 
-          <Pressable className="mt-[14px] self-center" onPress={() => onBack && onBack()}>
-            <Text className="text-[14px] text-[#575757]">Voltar</Text>
-          </Pressable>
-        </View>
+            <Pressable className="mt-[14px] self-center" onPress={() => onBack && onBack()}>
+              <Text className="text-[14px] text-[#575757]">Voltar</Text>
+            </Pressable>
+          </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

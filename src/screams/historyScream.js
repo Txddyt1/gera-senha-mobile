@@ -3,11 +3,11 @@ import { Feather } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import {
   Alert,
-  Animated,
   Pressable,
   SafeAreaView,
   ScrollView,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import Toast from '../components/Toast';
@@ -15,10 +15,12 @@ import { copyToClipboard } from '../services/clipboardService';
 import { androidTopInset } from '../utils/screenInsets';
 
 export default function HistoryScream({ history = [], onBack, onDeleteItem }) {
+  const { width } = useWindowDimensions();
   const [visiblePasswords, setVisiblePasswords] = useState({});
   const [toastMessage, setToastMessage] = useState('');
-  const toastAnim = useRef(new Animated.Value(0)).current;
   const toastTimeoutRef = useRef(null);
+
+  const contentWidth = Math.min(Math.max(width - 36, 0), 340);
 
   const togglePasswordVisibility = (id) => {
     setVisiblePasswords(prev => ({
@@ -68,20 +70,9 @@ export default function HistoryScream({ history = [], onBack, onDeleteItem }) {
     }
 
     setToastMessage(message);
-    Animated.timing(toastAnim, {
-      toValue: 1,
-      duration: 250,
-      useNativeDriver: true,
-    }).start();
 
     toastTimeoutRef.current = setTimeout(() => {
-      Animated.timing(toastAnim, {
-        toValue: 0,
-        duration: 250,
-        useNativeDriver: true,
-      }).start(() => {
-        setToastMessage('');
-      });
+      setToastMessage('');
       toastTimeoutRef.current = null;
     }, 1600);
   }
@@ -94,10 +85,16 @@ export default function HistoryScream({ history = [], onBack, onDeleteItem }) {
 
       <ScrollView
         className="flex-1"
-        contentContainerClassName="flex-grow items-center justify-center px-[18px] py-8"
+        contentContainerStyle={{
+          flexGrow: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          paddingHorizontal: 18,
+          paddingVertical: 32,
+        }}
         showsVerticalScrollIndicator={false}
       >
-        <View className="w-full max-w-[340px] items-center justify-center">
+        <View className="items-center" style={{ width: contentWidth }}>
           <Text className="mb-7 text-center text-[28px] font-extrabold text-[#0E3D7A]">
             SENHAS SALVAS
           </Text>
@@ -163,7 +160,7 @@ export default function HistoryScream({ history = [], onBack, onDeleteItem }) {
         </View>
       </ScrollView>
 
-      <Toast animatedValue={toastAnim} message={toastMessage} />
+      <Toast message={toastMessage} />
     </SafeAreaView>
   );
 }
