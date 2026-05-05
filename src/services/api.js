@@ -4,7 +4,7 @@ function trimTrailingSlash(value) {
   return value.replace(/\/+$/, '');
 }
 
-function resolveEnvUrl(envUrl) {
+export function resolveApiUrl(envUrl) {
   const normalizedUrl = trimTrailingSlash(envUrl);
 
   if (Platform.OS !== 'android') {
@@ -29,7 +29,7 @@ function resolveApiBaseUrl() {
   const envUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim();
 
   if (envUrl) {
-    return resolveEnvUrl(envUrl);
+    return resolveApiUrl(envUrl);
   }
 
   if (Platform.OS === 'web' && typeof window !== 'undefined') {

@@ -9,6 +9,12 @@ import {
 
 const AuthContext = createContext(null);
 
+function shouldKeepStoredSession(error) {
+  const message = String(error?.message || '');
+
+  return !message.includes('Token JWT');
+}
+
 export function AuthProvider({ children }) {
   const [authSession, setAuthSession] = useState(null);
   const [isBootstrapping, setIsBootstrapping] = useState(true);
@@ -43,6 +49,11 @@ export function AuthProvider({ children }) {
         await saveAuthSession(nextSession);
       } catch (error) {
         if (!isMounted) {
+          return;
+        }
+
+        if (shouldKeepStoredSession(error)) {
+          setAuthSession(storedSession);
           return;
         }
 

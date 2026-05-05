@@ -16,8 +16,12 @@ COPY assets ./assets
 COPY src ./src
 
 ARG EXPO_PUBLIC_API_BASE_URL=http://localhost:3001
+ARG EXPO_PUBLIC_PASSWORD_SYNC_API_URL=http://localhost:3001/passwords
 ENV EXPO_PUBLIC_API_BASE_URL=${EXPO_PUBLIC_API_BASE_URL}
+ENV EXPO_PUBLIC_PASSWORD_SYNC_API_URL=${EXPO_PUBLIC_PASSWORD_SYNC_API_URL}
 
+RUN mkdir -p node_modules/react-native-css-interop/.cache \
+  && touch node_modules/react-native-css-interop/.cache/web.css
 RUN npx expo export --platform web
 
 FROM nginx:1.27-alpine

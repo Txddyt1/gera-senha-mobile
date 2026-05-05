@@ -17,13 +17,28 @@ import { useAuth } from '../context/AuthContext';
 import { contentShellStyle } from '../utils/layout';
 import { androidTopInset } from '../utils/screenInsets';
 
-export default function HomeScream({ onNavigateToHistory, addToHistory }) {
+export default function HomeScream({
+  addToHistory,
+  onNavigateToHistory,
+  savePasswordToDatabase,
+  syncState,
+}) {
   const { signOut } = useAuth();
   const [password, setPassword] = useState('');
   const [applicationName, setApplicationName] = useState('');
+  const [currentHistoryItemId, setCurrentHistoryItemId] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isCurrentPasswordSaved, setIsCurrentPasswordSaved] = useState(false);
+  const [isSavingToDatabase, setIsSavingToDatabase] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const toastTimeoutRef = useRef(null);
+  const pendingCount = syncState?.pendingCount || 0;
+  const isOnline = !!syncState?.isOnline;
+  const syncDescription = syncState?.isSyncing
+    ? 'Sincronizando...'
+    : pendingCount > 0
+      ? `${pendingCount} pendente${pendingCount > 1 ? 's' : ''}`
+      : 'Tudo sincronizado';
 
   const handleCopy = async () => {
     if (!password) {
@@ -39,6 +54,9 @@ export default function HomeScream({ onNavigateToHistory, addToHistory }) {
     const generatedPassword = generatePassword();
     setPassword(generatedPassword);
     setApplicationName('');
+    setCurrentHistoryItemId(null);
+    setIsCurrentPasswordSaved(false);
+    showToast('Senha gerada');
   };
 
   const handleOpenSaveModal = () => {
@@ -51,30 +69,60 @@ export default function HomeScream({ onNavigateToHistory, addToHistory }) {
   };
 
   const handleCloseModal = () => {
+    if (isSavingToDatabase) {
+      return;
+    }
+
     setIsModalVisible(false);
     setApplicationName('');
+  };
+
+  const handleSavePassword = async () => {
+    if (!password || !applicationName.trim() || isSavingToDatabase) {
+      return;
+    }
+
+    setIsSavingToDatabase(true);
+
+    const wasSaved = isOnline
+      ? await savePasswordToDatabase?.({
+        appName: applicationName,
+        localId: currentHistoryItemId,
+        value: password,
+      })
+      : false;
+
+    if (!isCurrentPasswordSaved) {
+      const savedItem = await addToHistory?.({
+        appName: applicationName,
+        pending: !wasSaved,
+        value: password,
+      });
+      setCurrentHistoryItemId(savedItem?.id || null);
+      setIsCurrentPasswordSaved(Boolean(savedItem));
+    }
+
+    setIsSavingToDatabase(false);
+
+    if (wasSaved) {
+      setIsModalVisible(false);
+      setApplicationName('');
+      showToast('Senha salva no banco');
+      return;
+    }
+
+    setIsModalVisible(false);
+    setApplicationName('');
+    showToast('Senha salva localmente para sincronizar');
   };
 
   const handleSignOut = () => {
     handleCloseModal();
     setPassword('');
-    signOut();
-  };
-
-  const handleSavePassword = async () => {
-    if (!password || !applicationName.trim()) {
-      return;
-    }
-
-    setIsModalVisible(false);
-
-    const wasSaved = await addToHistory?.({
-      appName: applicationName,
-      value: password,
-    });
-
     setApplicationName('');
-    showToast(wasSaved ? 'Senha salva' : 'Erro ao salvar');
+    setCurrentHistoryItemId(null);
+    setIsCurrentPasswordSaved(false);
+    signOut();
   };
 
   function showToast(message) {
@@ -92,7 +140,7 @@ export default function HomeScream({ onNavigateToHistory, addToHistory }) {
   }
 
   const isSaveDisabled = !password;
-  const isCreateDisabled = !password || !applicationName.trim();
+  const isCreateDisabled = !password || !applicationName.trim() || isSavingToDatabase;
 
   return (
     <SafeAreaView className="flex-1 bg-white" style={{ paddingTop: androidTopInset }}>
@@ -119,6 +167,33 @@ export default function HomeScream({ onNavigateToHistory, addToHistory }) {
             GERADOR DE SENHA
           </Text>
 
+          <View
+            className={`mt-4 w-full rounded-[16px] border px-4 py-3 ${
+              isOnline ? 'border-[#BFE8D2] bg-[#F2FBF6]' : 'border-[#FFD4D4] bg-[#FFF5F5]'
+            }`}
+          >
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center">
+                <View
+                  className={`mr-2 h-2.5 w-2.5 rounded-full ${
+                    isOnline ? 'bg-[#1F9D55]' : 'bg-[#D64545]'
+                  }`}
+                />
+                <Text
+                  className={`text-[14px] font-bold ${
+                    isOnline ? 'text-[#116B3B]' : 'text-[#9B1C1C]'
+                  }`}
+                >
+                  {isOnline ? 'Online' : 'Offline'}
+                </Text>
+              </View>
+
+              <Text className="text-[13px] font-semibold text-[#556274]">
+                {syncDescription}
+              </Text>
+            </View>
+          </View>
+
           <Image
             className="mt-6 h-[180px] w-[180px] self-center"
             resizeMode="contain"
@@ -144,7 +219,9 @@ export default function HomeScream({ onNavigateToHistory, addToHistory }) {
               disabled={isSaveDisabled}
               onPress={handleOpenSaveModal}
             >
-              <Text className="text-center text-[16px] font-bold uppercase text-white">Salvar</Text>
+              <Text className="text-center text-[16px] font-bold uppercase text-white">
+                Salvar
+              </Text>
             </Pressable>
 
             <Pressable
@@ -183,6 +260,7 @@ export default function HomeScream({ onNavigateToHistory, addToHistory }) {
               <Text className="mb-2 text-[15px] text-[#4A5562]">Nome do aplicativo</Text>
               <TextInput
                 className="h-[50px] rounded-lg border border-[#B9C7D6] bg-[#F8FBFF] px-[14px] text-[15px] text-[#0B1F33]"
+                editable={!isSavingToDatabase}
                 onChangeText={setApplicationName}
                 placeholder="Digite a finalidade"
                 placeholderTextColor="#6F7D8B"
@@ -208,12 +286,13 @@ export default function HomeScream({ onNavigateToHistory, addToHistory }) {
               onPress={handleSavePassword}
             >
               <Text className="text-center text-[16px] font-bold uppercase text-white">
-                Criar
+                {isSavingToDatabase ? 'Salvando...' : 'Criar'}
               </Text>
             </Pressable>
 
             <Pressable
               className="mt-3 rounded-lg bg-[#0E3D7A] py-3.5"
+              disabled={isSavingToDatabase}
               onPress={handleCloseModal}
             >
               <Text className="text-center text-[16px] font-bold uppercase text-white">

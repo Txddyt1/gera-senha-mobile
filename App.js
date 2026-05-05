@@ -1,8 +1,13 @@
 import './global.css';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, SafeAreaView, Text } from 'react-native';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
+import {
+  PasswordHistoryProvider,
+  usePasswordHistory,
+} from './src/context/PasswordHistoryContext';
+import useSyncPasswords from './src/hooks/useSyncPasswords';
 import HomeScream from './src/screams/homeScream';
 import HistoryScream from './src/screams/historyScream';
 import SigninScream from './src/screams/signinScream';
@@ -16,7 +21,9 @@ import {
 export default function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <PasswordHistoryProvider>
+        <AppContent />
+      </PasswordHistoryProvider>
     </AuthProvider>
   );
 }
@@ -24,15 +31,14 @@ export default function App() {
 function AppContent() {
   const [screen, setScreen] = useState('signin');
   const { isAuthenticated, isBootstrapping, token } = useAuth();
-  const [historyData, setHistoryData] = useState([]);
-  const historyDataRef = useRef([]);
-
-  const normalizeHistoryItem = (item, index) => ({
-    id: item?.id || `${item?.createdAt || 'item'}-${index}-${item?.value || ''}`,
-    appName: item?.appName || 'Aplicativo',
-    value: item?.value || '',
-    createdAt: item?.createdAt || new Date().toISOString(),
-  });
+  const {
+    addPassword,
+    markAsSynced,
+    mergePasswords,
+    passwords,
+    removePassword,
+  } = usePasswordHistory();
+  const syncState = useSyncPasswords(token);
 
   useEffect(() => {
     setScreen(currentScreen => {
@@ -51,66 +57,67 @@ function AppContent() {
   useEffect(() => {
     let isMounted = true;
 
-    async function hydrateHistory() {
-      if (!token) {
-        historyDataRef.current = [];
-
-        if (isMounted) {
-          setHistoryData([]);
-        }
-
-        return;
-      }
-
-      if (screen !== 'history') {
+    async function hydrateHistoryFromDatabase() {
+      if (screen !== 'history' || !token || !syncState.isOnline) {
         return;
       }
 
       try {
         const response = await listPasswords(token);
-        const normalizedHistory = (response.passwords || []).map(normalizeHistoryItem);
 
         if (!isMounted) {
           return;
         }
 
-        historyDataRef.current = normalizedHistory;
-        setHistoryData(normalizedHistory);
+        mergePasswords((response.passwords || []).map(item => ({
+          appName: item.appName,
+          createdAt: item.createdAt,
+          id: item.id,
+          pending: false,
+          remoteId: item.id,
+          savedByUser: true,
+          value: item.value,
+        })));
       } catch (error) {
-        if (!isMounted) {
-          return;
-        }
-
-        historyDataRef.current = [];
-        setHistoryData([]);
+        // O historico local continua sendo a fonte imediata quando a API falha.
       }
     }
 
-    hydrateHistory();
+    hydrateHistoryFromDatabase();
 
     return () => {
       isMounted = false;
     };
-  }, [screen, token]);
+  }, [mergePasswords, screen, syncState.isOnline, token]);
 
-  const addToHistory = async ({ appName, value }) => {
+  const addToHistory = async ({ appName, pending, value }) => {
+    if (!value) {
+      return false;
+    }
+
+    const newPassword = addPassword({
+      appName,
+      pending,
+      value,
+    });
+
+    return newPassword;
+  };
+
+  const savePasswordToDatabase = async ({ appName, localId, value }) => {
     if (!token || !appName?.trim() || !value) {
       return false;
     }
 
     try {
-      const response = await createPassword(token, {
+      await createPassword(token, {
         appName,
         value,
       });
-      const newItem = normalizeHistoryItem(response.password, 0);
-      const nextHistory = [
-        newItem,
-        ...historyDataRef.current,
-      ];
 
-      historyDataRef.current = nextHistory;
-      setHistoryData(nextHistory);
+      if (localId) {
+        markAsSynced([localId]);
+      }
 
       return true;
     } catch (error) {
@@ -118,22 +125,26 @@ function AppContent() {
     }
   };
 
-  const handleDeleteHistoryItem = async (id) => {
-    if (!token) {
+  const handleDeleteHistoryItem = async (item) => {
+    if (!item?.id) {
       return false;
     }
 
-    try {
-      await deletePassword(token, id);
+    if (item.remoteId && token) {
+      if (!syncState.isOnline) {
+        return false;
+      }
 
-      const nextHistory = historyDataRef.current.filter(item => item.id !== id);
-      historyDataRef.current = nextHistory;
-      setHistoryData(nextHistory);
-
-      return true;
-    } catch (error) {
-      return false;
+      try {
+        await deletePassword(token, item.remoteId);
+      } catch (error) {
+        return false;
+      }
     }
+
+    removePassword(item.id);
+
+    return true;
   };
 
   if (isBootstrapping) {
@@ -165,12 +176,15 @@ function AppContent() {
     <HomeScream
       onNavigateToHistory={() => setScreen('history')}
       addToHistory={addToHistory}
+      savePasswordToDatabase={savePasswordToDatabase}
+      syncState={syncState}
     />
   ) : (
     <HistoryScream
-      history={historyData}
+      history={passwords}
       onBack={() => setScreen('home')}
       onDeleteItem={handleDeleteHistoryItem}
+      syncState={syncState}
     />
   );
 }
