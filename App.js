@@ -2,43 +2,44 @@ import './global.css';
 
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, SafeAreaView, Text } from 'react-native';
-import { AuthProvider, useAuth } from './src/context/AuthContext';
-import {
-  PasswordHistoryProvider,
-  usePasswordHistory,
-} from './src/context/PasswordHistoryContext';
 import useSyncPasswords from './src/hooks/useSyncPasswords';
 import HomeScream from './src/screams/homeScream';
 import HistoryScream from './src/screams/historyScream';
 import SigninScream from './src/screams/signinScream';
 import SignupScream from './src/screams/signupScream';
+import { useAuthStore } from './src/stores/authStore';
+import { usePasswordStore } from './src/stores/passwordStore';
 import {
   createPassword,
-  deletePassword,
-  listPasswords,
 } from './src/services/passwordService';
 
 export default function App() {
-  return (
-    <AuthProvider>
-      <PasswordHistoryProvider>
-        <AppContent />
-      </PasswordHistoryProvider>
-    </AuthProvider>
-  );
+  return <AppContent />;
 }
 
 function AppContent() {
   const [screen, setScreen] = useState('signin');
-  const { isAuthenticated, isBootstrapping, token } = useAuth();
-  const {
-    addPassword,
-    markAsSynced,
-    mergePasswords,
-    passwords,
-    removePassword,
-  } = usePasswordHistory();
-  const syncState = useSyncPasswords(token);
+  const authHasHydrated = useAuthStore(state => state.hasHydrated);
+  const authSession = useAuthStore(state => state.authSession);
+  const bootstrapAuth = useAuthStore(state => state.bootstrapAuth);
+  const isBootstrapping = useAuthStore(state => state.isBootstrapping);
+  const addPassword = usePasswordStore(state => state.addPassword);
+  const deletePasswordItem = usePasswordStore(state => state.deletePasswordItem);
+  const hydrateRemotePasswords = usePasswordStore(state => state.hydrateRemotePasswords);
+  const markAsSynced = usePasswordStore(state => state.markAsSynced);
+  const passwords = usePasswordStore(state => state.passwords);
+  const passwordHasHydrated = usePasswordStore(state => state.hasHydrated);
+  const syncState = useSyncPasswords();
+  const isAuthenticated = !!authSession?.token;
+  const token = authSession?.token || null;
+
+  useEffect(() => {
+    if (!authHasHydrated) {
+      return;
+    }
+
+    bootstrapAuth();
+  }, [authHasHydrated, bootstrapAuth]);
 
   useEffect(() => {
     setScreen(currentScreen => {
@@ -55,49 +56,23 @@ function AppContent() {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    let isMounted = true;
-
-    async function hydrateHistoryFromDatabase() {
-      if (screen !== 'history' || !token || !syncState.isOnline) {
-        return;
-      }
-
-      try {
-        const response = await listPasswords(token);
-
-        if (!isMounted) {
-          return;
-        }
-
-        mergePasswords((response.passwords || []).map(item => ({
-          appName: item.appName,
-          createdAt: item.createdAt,
-          id: item.id,
-          pending: false,
-          remoteId: item.id,
-          savedByUser: true,
-          value: item.value,
-        })));
-      } catch (error) {
-        // O historico local continua sendo a fonte imediata quando a API falha.
-      }
+    if (screen !== 'history' || !token || !syncState.isOnline) {
+      return;
     }
 
-    hydrateHistoryFromDatabase();
+    hydrateRemotePasswords(token);
+  }, [hydrateRemotePasswords, screen, syncState.isOnline, token]);
 
-    return () => {
-      isMounted = false;
-    };
-  }, [mergePasswords, screen, syncState.isOnline, token]);
-
-  const addToHistory = async ({ appName, pending, value }) => {
+  const addToHistory = async ({ appName, createdAt, pending, remoteId, value }) => {
     if (!value) {
       return false;
     }
 
     const newPassword = addPassword({
       appName,
+      createdAt,
       pending,
+      remoteId,
       value,
     });
 
@@ -106,48 +81,33 @@ function AppContent() {
 
   const savePasswordToDatabase = async ({ appName, localId, value }) => {
     if (!token || !appName?.trim() || !value) {
-      return false;
+      return null;
     }
 
     try {
-      await createPassword(token, {
+      const response = await createPassword(token, {
         appName,
         value,
       });
 
       if (localId) {
-        markAsSynced([localId]);
+        markAsSynced([{
+          id: localId,
+          remoteId: response?.password?.id,
+        }]);
       }
 
-      return true;
+      return response?.password || null;
     } catch (error) {
-      return false;
+      return null;
     }
   };
 
   const handleDeleteHistoryItem = async (item) => {
-    if (!item?.id) {
-      return false;
-    }
-
-    if (item.remoteId && token) {
-      if (!syncState.isOnline) {
-        return false;
-      }
-
-      try {
-        await deletePassword(token, item.remoteId);
-      } catch (error) {
-        return false;
-      }
-    }
-
-    removePassword(item.id);
-
-    return true;
+    return deletePasswordItem(item, token);
   };
 
-  if (isBootstrapping) {
+  if (!authHasHydrated || !passwordHasHydrated || isBootstrapping) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-white px-6">
         <ActivityIndicator color="#0E3D7A" size="large" />

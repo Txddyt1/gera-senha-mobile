@@ -1,19 +1,19 @@
 import NetInfo from '@react-native-community/netinfo';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { usePasswordHistory } from '../context/PasswordHistoryContext';
-import { syncPasswordWithBackend } from '../services/passwordSyncService';
+import { useEffect } from 'react';
+import { useAuthStore } from '../stores/authStore';
+import {
+  selectPendingCount,
+  usePasswordStore,
+} from '../stores/passwordStore';
 
-export default function useSyncPasswords(token) {
-  const { isLoaded, markAsSynced, passwords } = usePasswordHistory();
-  const [isOnline, setIsOnline] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const isSyncingRef = useRef(false);
-
-  const pendingPasswords = useMemo(
-    () => passwords.filter(item => item.pending),
-    [passwords],
-  );
-  const pendingCount = pendingPasswords.length;
+export default function useSyncPasswords() {
+  const token = useAuthStore(state => state.authSession?.token || null);
+  const hasHydrated = usePasswordStore(state => state.hasHydrated);
+  const isOnline = usePasswordStore(state => state.isOnline);
+  const isSyncing = usePasswordStore(state => state.isSyncing);
+  const pendingCount = usePasswordStore(selectPendingCount);
+  const setOnlineStatus = usePasswordStore(state => state.setOnlineStatus);
+  const syncPendingPasswords = usePasswordStore(state => state.syncPendingPasswords);
 
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener((state) => {
@@ -21,45 +21,19 @@ export default function useSyncPasswords(token) {
         state.isConnected && state.isInternetReachable !== false,
       );
 
-      setIsOnline(hasConnection);
+      setOnlineStatus(hasConnection);
     });
 
     return unsubscribe;
-  }, []);
+  }, [setOnlineStatus]);
 
-  const syncPendingPasswords = useCallback(async () => {
-    if (!isLoaded || !isOnline || !token || isSyncingRef.current || pendingPasswords.length === 0) {
+  useEffect(() => {
+    if (!hasHydrated || !isOnline || !token || pendingCount === 0) {
       return;
     }
 
-    isSyncingRef.current = true;
-    setIsSyncing(true);
-
-    const syncedItems = [];
-
-    for (const passwordItem of pendingPasswords) {
-      try {
-        const response = await syncPasswordWithBackend(passwordItem, token);
-        syncedItems.push({
-          id: passwordItem.id,
-          remoteId: response?.data?.password?.id,
-        });
-      } catch (error) {
-        // Mantem pending=true para tentar de novo quando a conexao voltar.
-      }
-    }
-
-    if (syncedItems.length > 0) {
-      markAsSynced(syncedItems);
-    }
-
-    isSyncingRef.current = false;
-    setIsSyncing(false);
-  }, [isLoaded, isOnline, markAsSynced, pendingPasswords, token]);
-
-  useEffect(() => {
-    syncPendingPasswords();
-  }, [syncPendingPasswords]);
+    syncPendingPasswords(token);
+  }, [hasHydrated, isOnline, pendingCount, syncPendingPasswords, token]);
 
   return {
     isOnline,

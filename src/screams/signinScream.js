@@ -10,12 +10,12 @@ import {
   View,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { useAuth } from '../context/AuthContext';
+import { useAuthStore } from '../stores/authStore';
 import { formShellStyle } from '../utils/layout';
 import { androidTopInset } from '../utils/screenInsets';
 
 export default function SigninScream({ onNavigateToSignup, initialEmail = '' }) {
-  const { signIn } = useAuth();
+  const signIn = useAuthStore(state => state.signIn);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');

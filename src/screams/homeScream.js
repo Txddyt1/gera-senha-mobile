@@ -13,7 +13,7 @@ import {
 import generatePassword from '../utils/generatePassword';
 import { copyToClipboard } from '../services/clipboardService';
 import Toast from '../components/Toast';
-import { useAuth } from '../context/AuthContext';
+import { useAuthStore } from '../stores/authStore';
 import { contentShellStyle } from '../utils/layout';
 import { androidTopInset } from '../utils/screenInsets';
 
@@ -23,7 +23,7 @@ export default function HomeScream({
   savePasswordToDatabase,
   syncState,
 }) {
-  const { signOut } = useAuth();
+  const signOut = useAuthStore(state => state.signOut);
   const [password, setPassword] = useState('');
   const [applicationName, setApplicationName] = useState('');
   const [currentHistoryItemId, setCurrentHistoryItemId] = useState(null);
@@ -84,18 +84,21 @@ export default function HomeScream({
 
     setIsSavingToDatabase(true);
 
-    const wasSaved = isOnline
+    const savedRemotePassword = isOnline
       ? await savePasswordToDatabase?.({
         appName: applicationName,
         localId: currentHistoryItemId,
         value: password,
       })
-      : false;
+      : null;
+    const wasSaved = !!savedRemotePassword;
 
     if (!isCurrentPasswordSaved) {
       const savedItem = await addToHistory?.({
         appName: applicationName,
+        createdAt: savedRemotePassword?.createdAt,
         pending: !wasSaved,
+        remoteId: savedRemotePassword?.id || null,
         value: password,
       });
       setCurrentHistoryItemId(savedItem?.id || null);
