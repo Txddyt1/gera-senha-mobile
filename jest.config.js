@@ -1,7 +1,7 @@
 module.exports = {
   moduleFileExtensions: ['js', 'json'],
   testEnvironment: 'node',
-  testMatch: ['**/__tests__/**/*.test.js'],
+  testMatch: ['**/tests/**/*.test.js', '**/__tests__/**/*.test.js'],
   transform: {
     '^.+\\.js$': 'babel-jest',
   },

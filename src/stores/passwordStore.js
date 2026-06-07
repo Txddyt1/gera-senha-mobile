@@ -52,6 +52,12 @@ function normalizePasswordItem(item, index) {
   };
 }
 
+function normalizePasswordList(items) {
+  return (Array.isArray(items) ? items : [])
+    .map(normalizePasswordItem)
+    .filter(Boolean);
+}
+
 function createPasswordMergeKey(item) {
   return `${String(item.appName || '').trim().toLowerCase()}::${item.password}`;
 }
@@ -104,7 +110,9 @@ export const usePasswordStore = create(
       isSyncing: false,
       passwords: [],
       addPassword: (payload) => {
-        const passwordValue = String(payload?.password || payload?.value || payload || '');
+        const passwordValue = typeof payload === 'object' && payload !== null
+          ? String(payload?.password || payload?.value || '')
+          : String(payload || '');
 
         if (!passwordValue) {
           return null;
@@ -188,9 +196,7 @@ export const usePasswordStore = create(
         }));
       },
       mergePasswords: (nextPasswords) => {
-        const mergedPasswords = (Array.isArray(nextPasswords) ? nextPasswords : [])
-          .map(normalizePasswordItem)
-          .filter(Boolean);
+        const mergedPasswords = normalizePasswordList(nextPasswords);
 
         set(state => ({
           passwords: mergePasswordLists(state.passwords, mergedPasswords),
@@ -247,6 +253,14 @@ export const usePasswordStore = create(
       },
     }),
     {
+      merge: (persistedState, currentState) => ({
+        ...currentState,
+        ...(persistedState || {}),
+        passwords: mergePasswordLists(
+          currentState.passwords,
+          normalizePasswordList(persistedState?.passwords),
+        ),
+      }),
       name: STORAGE_KEY,
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
